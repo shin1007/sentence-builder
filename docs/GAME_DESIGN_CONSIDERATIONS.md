@@ -45,7 +45,7 @@
 - ✅ (#4, #5) **バックグラウンド時のタイマー**: `visibilitychange` を監視し、タブ非表示中はカウントダウン（インターバル）と正解後の自動遷移（`setTimeout`）の両方を一時停止するようにした。
 - **PWA更新戦略**: `registerType: 'autoUpdate'`。新コンテンツ配信時にプレイ中ユーザーへ更新を促す導線があるか。
 - **オフライン完結**: 効果音はWeb Audio合成でオフライン完結。ただしTTSはOS内蔵音声依存のため厳密には非オフライン。
-- **セーフエリア対応**: `display: 'fullscreen'` の横画面PWAは、ノッチ/パンチホール端末での `env(safe-area-inset-*)` 対応が必要。ただし強制横画面がCSS回転トリック（`useForcedLandscape.ts`）なので、物理的な向きと表示上の向きがズレるケースがあり、`env()` の値をそのまま使うと逆方向にpaddingがついてしまう恐れがある。実機検証してから着手すること。
+- ✅ (#15) **セーフエリア対応**: `src/styles/global.css` の `.app-canvas` に、向き別に物理→視覚エッジを変換する `--safe-top/right/bottom/left` カスタムプロパティを追加。`is-landscape` は1:1、`is-portrait`（CSS回転中）は `rotate(90deg)` の回転方向を数式で導出し、物理top→視覚left、物理right→視覚top、物理bottom→視覚right、物理left→視覚bottomの対応で `env(safe-area-inset-*)` を割り当てた。各画面の `.screen` に `padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left)` を適用（ノッチなし端末では全て0pxなので既存レイアウトに影響なし）。iPhone実機で確認済み — 方向は正しかった。
 
 ## 7. データ・プライバシー（子ども向けアプリ特有）
 
@@ -66,5 +66,5 @@
 
 ## 次にやるとよさそうな候補（優先度順の目安）
 
-1. セーフエリア対応 — 実機（特にノッチのあるiPhone）での検証が先。強制横画面はCSS回転トリックなので、物理的な向きと表示上の向きがズレる（`is-portrait`時は物理top/right/bottom/leftをvisualのright/bottom/left/topに対応させる必要がある）。誤った方向にpaddingがつくと逆効果なので、実機なしで見切り発車しないこと。
-2. デイリーチャレンジ・ランキングなど、実績（#16）以外のリプレイ性向上策
+1. デイリーチャレンジ・ランキングなど、実績（#16）以外のリプレイ性向上策
+2. スコアリングの公平性（速さ偏重の見直し）や難易度カーブの調整
