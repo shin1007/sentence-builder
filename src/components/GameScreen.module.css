@@ -338,4 +338,8 @@
   .timerFill.urgent {
     animation: none;
   }
+
+  .flame {
+    animation: none;
+  }
 }
