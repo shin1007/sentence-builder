@@ -77,6 +77,16 @@ export default function GameScreen({
   const advanceTimer = useRef<number | null>(null)
   const popIdRef = useRef(0)
 
+  // Freeze the countdown while the tab/app is backgrounded so returning
+  // players don't find their time silently drained (or the round already
+  // timed out) by however long they were away.
+  const [isHidden, setIsHidden] = useState(() => document.hidden)
+  useEffect(() => {
+    const onVisibilityChange = () => setIsHidden(document.hidden)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [])
+
   useEffect(() => {
     if (qIndex === 0) return
     const q = questions[qIndex]
@@ -93,7 +103,7 @@ export default function GameScreen({
   }, [qIndex])
 
   useEffect(() => {
-    if (status !== 'playing') return
+    if (status !== 'playing' || isHidden) return
     const id = window.setInterval(() => {
       setTimeLeft((t) => {
         const next = Math.max(0, t - 0.1)
@@ -106,7 +116,7 @@ export default function GameScreen({
       })
     }, 100)
     return () => window.clearInterval(id)
-  }, [status, qIndex, sound])
+  }, [status, qIndex, sound, isHidden])
 
   useEffect(
     () => () => {
@@ -297,7 +307,10 @@ export default function GameScreen({
             </button>
           </div>
           {status === 'wrong' && (
-            <p className={`${styles.note} ${styles.noteWrong}`}>正解: {question.words.join(' ')}</p>
+            <>
+              <p className={`${styles.note} ${styles.noteWrong}`}>正解: {question.words.join(' ')}</p>
+              {question.note && <span className={styles.note}>{question.note}</span>}
+            </>
           )}
           {status === 'correct' && question.note && <span className={styles.note}>{question.note}</span>}
         </div>
