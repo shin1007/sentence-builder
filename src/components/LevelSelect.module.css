@@ -31,7 +31,8 @@
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 75% 15%, #4b32e0 0%, #201261 60%);
-  padding: 2vh 3vh;
+  padding: calc(2vh + var(--safe-top)) calc(3vh + var(--safe-right)) calc(2vh + var(--safe-bottom))
+    calc(3vh + var(--safe-left));
   gap: 2vh;
 }
 

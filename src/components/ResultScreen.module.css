@@ -33,6 +33,7 @@
   background: radial-gradient(circle at 50% 0%, #4b32e0 0%, #180c4a 70%);
   overflow: hidden;
   gap: 1.2vh;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
 }
 
 .badge {
