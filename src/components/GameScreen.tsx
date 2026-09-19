@@ -352,13 +352,14 @@ export default function GameScreen({
         </div>
 
         <div className={styles.slotsArea}>
-          <div className={styles.slotsRow}>
+          <div className={styles.slotsRow} role="group" aria-label="解答欄">
             {slots.map((tile, i) => (
               <AnswerSlot
                 key={i}
                 word={tile ? tile.word : null}
                 displayWord={tile ? displayFor(tile, capitalizeFirst) : undefined}
                 colorIndex={tile ? tile.uid : i}
+                position={i + 1}
                 mismatch={status === 'wrong' && !!tile && tile.word !== question.words[i]}
                 onClick={() => handleSlotTap(i)}
               />
@@ -367,7 +368,7 @@ export default function GameScreen({
         </div>
 
         <div className={styles.trayArea}>
-          <div className={styles.trayRow}>
+          <div className={styles.trayRow} role="group" aria-label="単語カード">
             {tray.map((tile) => (
               <WordTile
                 key={tile.uid}
