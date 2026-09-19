@@ -13,9 +13,9 @@
 }
 
 .tile {
-  min-height: 6vh;
+  min-height: 7.2vh;
   min-width: 44px;
-  padding: 0 1.6vh;
+  padding: 0.4vh 1.6vh;
   border-radius: 14px;
   display: flex;
   align-items: center;
@@ -56,7 +56,7 @@
 }
 
 .slot {
-  min-height: 6vh;
+  min-height: 7.2vh;
   min-width: 44px;
   border-radius: 14px;
   border: 2px dashed rgba(255, 255, 255, 0.35);

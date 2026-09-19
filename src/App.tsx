@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useForcedLandscape } from './hooks/useForcedLandscape'
 import { SoundProvider, useSoundContext } from './context/SoundContext'
+import { SettingsProvider } from './context/SettingsContext'
 import TitleScreen from './components/TitleScreen'
 import LevelSelect from './components/LevelSelect'
 import GameScreen from './components/GameScreen'
@@ -55,7 +56,9 @@ export default function App() {
   return (
     <div className={`app-root ${isPortrait ? 'is-portrait' : 'is-landscape'}`}>
       <SoundProvider>
-        <Shell />
+        <SettingsProvider>
+          <Shell />
+        </SettingsProvider>
       </SoundProvider>
     </div>
   )

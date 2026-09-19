@@ -9,11 +9,13 @@ const COLOR_CLASSES = [styles.c0, styles.c1, styles.c2, styles.c3, styles.c4]
 
 export function WordTile({
   word,
+  displayWord,
   colorIndex,
   onClick,
   disabled,
 }: {
   word: string
+  displayWord?: string
   colorIndex: number
   onClick: () => void
   disabled?: boolean
@@ -25,17 +27,19 @@ export function WordTile({
       onClick={onClick}
       disabled={disabled}
     >
-      {word}
+      {displayWord ?? word}
     </button>
   )
 }
 
 export function AnswerSlot({
   word,
+  displayWord,
   colorIndex,
   onClick,
 }: {
   word: string | null
+  displayWord?: string
   colorIndex: number
   onClick: () => void
 }) {
@@ -49,7 +53,7 @@ export function AnswerSlot({
         style={{ minWidth: estimateTileWidth(word) }}
         onClick={onClick}
       >
-        {word}
+        {displayWord ?? word}
       </button>
     </div>
   )

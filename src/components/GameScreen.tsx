@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getLevel } from '../data/levels'
 import { pickQuestions } from '../data/questions'
 import { useSoundContext } from '../context/SoundContext'
+import { useSettingsContext } from '../context/SettingsContext'
 import { saveBestResultIfBetter } from '../utils/storage'
+import { speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
 import type { LevelId, LevelResult, Question } from '../types'
@@ -31,6 +33,13 @@ function buildTiles(question: Question): Tile[] {
   return shuffle(question.words.map((word, uid) => ({ uid, word })))
 }
 
+/** The very first word is always sentence-capitalized; "I" stays capitalized
+ * regardless (it's a mandatory pronoun capital, not a sentence-start hint). */
+function displayFor(tile: Tile, capitalizeFirst: boolean): string {
+  if (capitalizeFirst || tile.uid !== 0 || tile.word === 'I') return tile.word
+  return tile.word.charAt(0).toLowerCase() + tile.word.slice(1)
+}
+
 export default function GameScreen({
   levelId,
   onFinish,
@@ -42,6 +51,7 @@ export default function GameScreen({
 }) {
   const level = getLevel(levelId)!
   const sound = useSoundContext()
+  const { capitalizeFirst } = useSettingsContext()
 
   const questions = useMemo(() => pickQuestions(levelId, QUESTIONS_PER_SESSION), [levelId])
   const [qIndex, setQIndex] = useState(0)
@@ -76,6 +86,11 @@ export default function GameScreen({
     setTimeLeft(level.timeLimitSec)
     lastTickSecond.current = -1
   }, [qIndex, questions, level.timeLimitSec])
+
+  useEffect(() => {
+    if (sound.sfxOn) speakJapanese(questions[qIndex].jp)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qIndex])
 
   useEffect(() => {
     if (status !== 'playing') return
@@ -186,6 +201,18 @@ export default function GameScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, status])
 
+  useEffect(() => {
+    if (status === 'correct' && sound.sfxOn) {
+      speakEnglish(question.words.join(' '))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status])
+
+  const handleListen = () => {
+    sound.click()
+    speakEnglish(question.words.join(' '))
+  }
+
   const handleTrayTap = (tile: Tile) => {
     if (status !== 'playing') return
     const emptyIndex = slots.findIndex((s) => s === null)
@@ -263,7 +290,12 @@ export default function GameScreen({
         </div>
 
         <div className={styles.promptArea}>
-          <p className={styles.jpText}>{question.jp}</p>
+          <div className={styles.jpRow}>
+            <p className={styles.jpText}>{question.jp}</p>
+            <button className={styles.speakButton} onClick={handleListen} aria-label="英文を読み上げる">
+              🔊
+            </button>
+          </div>
           {status === 'wrong' && (
             <p className={`${styles.note} ${styles.noteWrong}`}>正解: {question.words.join(' ')}</p>
           )}
@@ -276,6 +308,7 @@ export default function GameScreen({
               <AnswerSlot
                 key={i}
                 word={tile ? tile.word : null}
+                displayWord={tile ? displayFor(tile, capitalizeFirst) : undefined}
                 colorIndex={tile ? tile.uid : i}
                 onClick={() => handleSlotTap(i)}
               />
@@ -289,6 +322,7 @@ export default function GameScreen({
               <WordTile
                 key={tile.uid}
                 word={tile.word}
+                displayWord={displayFor(tile, capitalizeFirst)}
                 colorIndex={tile.uid}
                 onClick={() => handleTrayTap(tile)}
                 disabled={status !== 'playing'}

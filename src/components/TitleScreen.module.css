@@ -184,3 +184,9 @@
 .iconButton.off {
   opacity: 0.45;
 }
+
+.iconButton.textIcon {
+  font-size: 1.5vh;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
