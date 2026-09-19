@@ -264,7 +264,6 @@ export default function GameScreen({
     const nextSlots = [...slots]
     nextSlots[emptyIndex] = tile
     setSlots(nextSlots)
-    setTray((t) => t.filter((x) => x.uid !== tile.uid))
     sound.place()
 
     if (nextSlots.every((s) => s !== null)) {
@@ -281,7 +280,6 @@ export default function GameScreen({
     const nextSlots = [...slots]
     nextSlots[index] = null
     setSlots(nextSlots)
-    setTray((t) => [...t, tile])
     sound.remove()
   }
 
@@ -371,16 +369,20 @@ export default function GameScreen({
 
         <div className={styles.trayArea}>
           <div className={styles.trayRow} role="group" aria-label="単語カード">
-            {tray.map((tile) => (
-              <WordTile
-                key={tile.uid}
-                word={tile.word}
-                displayWord={displayFor(tile, capitalizeFirst)}
-                colorIndex={tile.uid}
-                onClick={() => handleTrayTap(tile)}
-                disabled={status !== 'playing'}
-              />
-            ))}
+            {tray.map((tile) => {
+              const placed = slots.some((s) => s?.uid === tile.uid)
+              return (
+                <WordTile
+                  key={tile.uid}
+                  word={tile.word}
+                  displayWord={displayFor(tile, capitalizeFirst)}
+                  colorIndex={tile.uid}
+                  onClick={() => handleTrayTap(tile)}
+                  disabled={status !== 'playing' || placed}
+                  placed={placed}
+                />
+              )
+            })}
           </div>
         </div>
       </div>
