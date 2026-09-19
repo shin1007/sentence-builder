@@ -39,6 +39,12 @@
   pointer-events: none;
 }
 
+/* Points out exactly which placed words are in the wrong spot, once a wrong
+ * answer has been scored, instead of leaving learners to spot it themselves. */
+.tile.mismatch {
+  box-shadow: 0 0 0 3px var(--color-danger), 0 5px 0 rgba(0, 0, 0, 0.2), 0 10px 16px rgba(0, 0, 0, 0.22);
+}
+
 .c0 {
   background: var(--color-accent-yellow);
 }

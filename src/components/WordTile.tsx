@@ -36,11 +36,15 @@ export function AnswerSlot({
   word,
   displayWord,
   colorIndex,
+  mismatch,
   onClick,
 }: {
   word: string | null
   displayWord?: string
   colorIndex: number
+  /** Marks this slot's tile as landing in the wrong position, once the round
+   * has been scored, so learners can see exactly which words to move. */
+  mismatch?: boolean
   onClick: () => void
 }) {
   if (word === null) {
@@ -49,7 +53,7 @@ export function AnswerSlot({
   return (
     <div className={`${styles.slot} ${styles.filled}`}>
       <button
-        className={`${styles.tile} ${COLOR_CLASSES[colorIndex % COLOR_CLASSES.length]}`}
+        className={`${styles.tile} ${COLOR_CLASSES[colorIndex % COLOR_CLASSES.length]} ${mismatch ? styles.mismatch : ''}`}
         style={{ minWidth: estimateTileWidth(word) }}
         onClick={onClick}
       >

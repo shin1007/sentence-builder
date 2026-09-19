@@ -332,6 +332,7 @@ export default function GameScreen({
                 word={tile ? tile.word : null}
                 displayWord={tile ? displayFor(tile, capitalizeFirst) : undefined}
                 colorIndex={tile ? tile.uid : i}
+                mismatch={status === 'wrong' && !!tile && tile.word !== question.words[i]}
                 onClick={() => handleSlotTap(i)}
               />
             ))}
