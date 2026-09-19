@@ -325,3 +325,17 @@
   display: flex;
   flex-direction: column;
 }
+
+/* Full-screen flashes and falling confetti are the two biggest motion/flicker
+   sources on this screen (photosensitivity + vestibular triggers), so they're
+   the ones suppressed for players who've asked the OS for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .flashOverlay,
+  .confettiPiece {
+    display: none;
+  }
+
+  .timerFill.urgent {
+    animation: none;
+  }
+}

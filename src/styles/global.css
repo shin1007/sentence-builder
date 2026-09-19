@@ -112,3 +112,9 @@ button {
 .shake {
   animation: shake-x 0.42s ease;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .shake {
+    animation: none;
+  }
+}
