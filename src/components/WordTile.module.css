@@ -39,6 +39,13 @@
   pointer-events: none;
 }
 
+/* Already placed in an answer slot: fades out but keeps its spot in the
+ * tray's layout, so tapping it doesn't shift every other tile's position. */
+.tile.placed {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Points out exactly which placed words are in the wrong spot, once a wrong
  * answer has been scored, instead of leaving learners to spot it themselves. */
 .tile.mismatch {

@@ -13,17 +13,22 @@ export function WordTile({
   colorIndex,
   onClick,
   disabled,
+  placed,
 }: {
   word: string
   displayWord?: string
   colorIndex: number
   onClick: () => void
   disabled?: boolean
+  /** Already placed in an answer slot: keeps this tile's spot in the tray
+   * reserved (so the other tiles don't jump into the gap) but hides it,
+   * since its word is now shown in the answer row instead. */
+  placed?: boolean
 }) {
   const shown = displayWord ?? word
   return (
     <button
-      className={`${styles.tile} ${COLOR_CLASSES[colorIndex % COLOR_CLASSES.length]}`}
+      className={`${styles.tile} ${COLOR_CLASSES[colorIndex % COLOR_CLASSES.length]} ${placed ? styles.placed : ''}`}
       style={{ minWidth: estimateTileWidth(word) }}
       onClick={onClick}
       disabled={disabled}
