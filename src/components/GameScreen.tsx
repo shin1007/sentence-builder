@@ -4,7 +4,7 @@ import { pickQuestions } from '../data/questions'
 import { useSoundContext } from '../context/SoundContext'
 import { useSettingsContext } from '../context/SettingsContext'
 import { saveBestResultIfBetter } from '../utils/storage'
-import { speakEnglish } from '../audio/speech'
+import { speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
 import type { LevelId, LevelResult, Question } from '../types'
@@ -86,6 +86,11 @@ export default function GameScreen({
     setTimeLeft(level.timeLimitSec)
     lastTickSecond.current = -1
   }, [qIndex, questions, level.timeLimitSec])
+
+  useEffect(() => {
+    if (sound.sfxOn) speakJapanese(questions[qIndex].jp)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qIndex])
 
   useEffect(() => {
     if (status !== 'playing') return
