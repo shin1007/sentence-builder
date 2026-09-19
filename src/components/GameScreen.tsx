@@ -5,6 +5,7 @@ import { useSoundContext } from '../context/SoundContext'
 import { useSettingsContext } from '../context/SettingsContext'
 import { saveBestResultIfBetter } from '../utils/storage'
 import { loadMissedIds, recordMastered, recordMiss } from '../utils/reviewQueue'
+import { evaluateAchievements, type Achievement } from '../utils/achievements'
 import { speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
@@ -47,7 +48,7 @@ export default function GameScreen({
   onExit,
 }: {
   levelId: LevelId
-  onFinish: (result: LevelResult, isNewBest: boolean) => void
+  onFinish: (result: LevelResult, isNewBest: boolean, newAchievements: Achievement[]) => void
   onExit: () => void
 }) {
   const level = getLevel(levelId)!
@@ -148,9 +149,10 @@ export default function GameScreen({
       // Practice sessions have no timer/lives pressure, so they aren't a fair
       // comparison against timed runs and shouldn't overwrite a real best.
       const isNewBest = practiceMode ? false : saveBestResultIfBetter(result)
+      const newAchievements = evaluateAchievements(result)
       if (stars >= 2) sound.win()
       else sound.lose()
-      onFinish(result, isNewBest)
+      onFinish(result, isNewBest, newAchievements)
     },
     [levelId, onFinish, sound, practiceMode],
   )
