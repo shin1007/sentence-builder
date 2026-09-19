@@ -4,6 +4,7 @@ import { pickQuestions } from '../data/questions'
 import { useSoundContext } from '../context/SoundContext'
 import { useSettingsContext } from '../context/SettingsContext'
 import { saveBestResultIfBetter } from '../utils/storage'
+import { loadMissedIds, recordMastered, recordMiss } from '../utils/reviewQueue'
 import { speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
@@ -53,7 +54,10 @@ export default function GameScreen({
   const sound = useSoundContext()
   const { capitalizeFirst, practiceMode } = useSettingsContext()
 
-  const questions = useMemo(() => pickQuestions(levelId, QUESTIONS_PER_SESSION), [levelId])
+  const questions = useMemo(
+    () => pickQuestions(levelId, QUESTIONS_PER_SESSION, loadMissedIds(levelId)),
+    [levelId],
+  )
   const [qIndex, setQIndex] = useState(0)
   const question = questions[qIndex]
 
@@ -178,6 +182,7 @@ export default function GameScreen({
         setCorrectCount(nextCorrect)
         setScorePop({ id: popIdRef.current++, value: gained })
         sound.correct()
+        recordMastered(levelId, question.id)
         if (nextCombo === 3 || (nextCombo >= 5 && nextCombo % 5 === 0)) {
           window.setTimeout(() => sound.combo(nextCombo >= 5 ? 2 : 1), 260)
         }
@@ -188,6 +193,7 @@ export default function GameScreen({
         setLives(nextLives)
         setShake(true)
         sound.wrong()
+        recordMiss(levelId, question.id)
         window.setTimeout(() => setShake(false), 450)
       }
 
@@ -212,7 +218,21 @@ export default function GameScreen({
       }
       advanceTimer.current = window.setTimeout(advance, isCorrect ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG)
     },
-    [score, combo, bestCombo, correctCount, lives, timeLeft, qIndex, questions.length, sound, finishSession, practiceMode],
+    [
+      score,
+      combo,
+      bestCombo,
+      correctCount,
+      lives,
+      timeLeft,
+      qIndex,
+      question,
+      questions.length,
+      sound,
+      finishSession,
+      practiceMode,
+      levelId,
+    ],
   )
 
   useEffect(() => {

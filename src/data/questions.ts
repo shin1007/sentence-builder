@@ -17,11 +17,27 @@ export const QUESTIONS: Record<LevelId, Question[]> = {
   eiken2: eiken2Questions,
 }
 
-export function pickQuestions(levelId: LevelId, count: number): Question[] {
-  const pool = [...QUESTIONS[levelId]]
-  for (let i = pool.length - 1; i > 0; i--) {
+function shuffle<T>(items: T[]): T[] {
+  const shuffled = [...items]
+  for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[pool[i], pool[j]] = [pool[j], pool[i]]
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
-  return pool.slice(0, Math.min(count, pool.length))
+  return shuffled
+}
+
+/**
+ * Picks `count` questions for a session, biased toward `priorityIds` —
+ * questions the player previously got wrong on this level (see
+ * utils/reviewQueue.ts) — so they resurface instead of only ever seeing a
+ * fresh random slice of the pool. Priority questions aren't clustered at
+ * the front of the session; the final order is shuffled too.
+ */
+export function pickQuestions(levelId: LevelId, count: number, priorityIds: readonly string[] = []): Question[] {
+  const pool = QUESTIONS[levelId]
+  const prioritySet = new Set(priorityIds)
+  const priority = pool.filter((question) => prioritySet.has(question.id))
+  const rest = pool.filter((question) => !prioritySet.has(question.id))
+  const ordered = [...shuffle(priority), ...shuffle(rest)].slice(0, Math.min(count, pool.length))
+  return shuffle(ordered)
 }
