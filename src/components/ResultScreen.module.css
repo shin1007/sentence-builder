@@ -1,0 +1,122 @@
+@keyframes pop-in {
+  0% {
+    transform: scale(0.4) rotate(var(--pop-rot, 0deg));
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12) rotate(var(--pop-rot, 0deg));
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(var(--pop-rot, 0deg));
+  }
+}
+
+@keyframes pulse-warn {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 0%, #4b32e0 0%, #180c4a 70%);
+  overflow: hidden;
+  gap: 1.2vh;
+}
+
+.badge {
+  font-size: clamp(0.7rem, 1.8vh, 1rem);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  opacity: 0.85;
+  animation: pop-in 0.4s ease both;
+}
+
+.newBest {
+  padding: 0.4vh 1.6vh;
+  border-radius: 999px;
+  background: var(--color-accent-yellow);
+  color: #7a5200;
+  animation: pulse-warn 1s ease-in-out infinite, pop-in 0.4s ease both;
+}
+
+.stars {
+  display: flex;
+  gap: 1.6vh;
+  font-size: clamp(2rem, 7vh, 3.6rem);
+  margin: 0.4vh 0;
+}
+
+.star {
+  opacity: 0.25;
+  transform: scale(0.5);
+  transition: none;
+}
+
+.star.lit {
+  opacity: 1;
+  animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  filter: drop-shadow(0 0 12px rgba(255, 210, 63, 0.7));
+}
+
+.statsRow {
+  display: flex;
+  gap: 3vh;
+  margin-top: 0.6vh;
+}
+
+.stat {
+  text-align: center;
+}
+
+.statValue {
+  font-size: clamp(1.2rem, 3.6vh, 2rem);
+  font-weight: 800;
+  display: block;
+}
+
+.statLabel {
+  font-size: clamp(0.6rem, 1.4vh, 0.78rem);
+  opacity: 0.75;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 2vh;
+  margin-top: 2vh;
+}
+
+.button {
+  padding: 1.4vh 3.6vh;
+  font-size: clamp(0.85rem, 2.2vh, 1.15rem);
+  font-weight: 800;
+  border-radius: 999px;
+  transition: transform 0.08s ease;
+}
+
+.button:active {
+  transform: translateY(4px);
+}
+
+.primary {
+  color: #2c1c9c;
+  background: var(--color-accent-yellow);
+  box-shadow: 0 6px 0 #c9962b, 0 12px 20px rgba(0, 0, 0, 0.3);
+}
+
+.secondary {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}

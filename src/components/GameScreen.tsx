@@ -1,0 +1,310 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { getLevel } from '../data/levels'
+import { pickQuestions } from '../data/questions'
+import { useSoundContext } from '../context/SoundContext'
+import { saveBestResultIfBetter } from '../utils/storage'
+import { WordTile, AnswerSlot } from './WordTile'
+import Confetti from './Confetti'
+import type { LevelId, LevelResult, Question } from '../types'
+import styles from './GameScreen.module.css'
+
+const QUESTIONS_PER_SESSION = 10
+const START_LIVES = 3
+const FEEDBACK_DELAY_CORRECT = 1100
+const FEEDBACK_DELAY_WRONG = 1500
+
+interface Tile {
+  uid: number
+  word: string
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+function buildTiles(question: Question): Tile[] {
+  return shuffle(question.words.map((word, uid) => ({ uid, word })))
+}
+
+export default function GameScreen({
+  levelId,
+  onFinish,
+  onExit,
+}: {
+  levelId: LevelId
+  onFinish: (result: LevelResult, isNewBest: boolean) => void
+  onExit: () => void
+}) {
+  const level = getLevel(levelId)!
+  const sound = useSoundContext()
+
+  const questions = useMemo(() => pickQuestions(levelId, QUESTIONS_PER_SESSION), [levelId])
+  const [qIndex, setQIndex] = useState(0)
+  const question = questions[qIndex]
+
+  const [tray, setTray] = useState<Tile[]>(() => buildTiles(questions[0]))
+  const [slots, setSlots] = useState<(Tile | null)[]>(() =>
+    new Array(questions[0].words.length).fill(null),
+  )
+
+  const [lives, setLives] = useState(START_LIVES)
+  const [score, setScore] = useState(0)
+  const [combo, setCombo] = useState(0)
+  const [bestCombo, setBestCombo] = useState(0)
+  const [correctCount, setCorrectCount] = useState(0)
+
+  const [status, setStatus] = useState<'playing' | 'correct' | 'wrong'>('playing')
+  const [timeLeft, setTimeLeft] = useState(level.timeLimitSec)
+  const [scorePop, setScorePop] = useState<{ id: number; value: number } | null>(null)
+  const [shake, setShake] = useState(false)
+
+  const lastTickSecond = useRef(-1)
+  const advanceTimer = useRef<number | null>(null)
+  const popIdRef = useRef(0)
+
+  useEffect(() => {
+    if (qIndex === 0) return
+    const q = questions[qIndex]
+    setTray(buildTiles(q))
+    setSlots(new Array(q.words.length).fill(null))
+    setStatus('playing')
+    setTimeLeft(level.timeLimitSec)
+    lastTickSecond.current = -1
+  }, [qIndex, questions, level.timeLimitSec])
+
+  useEffect(() => {
+    if (status !== 'playing') return
+    const id = window.setInterval(() => {
+      setTimeLeft((t) => {
+        const next = Math.max(0, t - 0.1)
+        const floorNext = Math.floor(next)
+        if (floorNext <= 4 && floorNext !== lastTickSecond.current && next > 0) {
+          lastTickSecond.current = floorNext
+          sound.tick(true)
+        }
+        return next
+      })
+    }, 100)
+    return () => window.clearInterval(id)
+  }, [status, qIndex, sound])
+
+  useEffect(
+    () => () => {
+      if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
+    },
+    [],
+  )
+
+  const finishSession = useCallback(
+    (finalScore: number, finalCorrect: number, finalBestCombo: number) => {
+      const total = QUESTIONS_PER_SESSION
+      const accuracy = finalCorrect / total
+      const stars: 0 | 1 | 2 | 3 = accuracy >= 0.9 ? 3 : accuracy >= 0.7 ? 2 : accuracy >= 0.4 ? 1 : 0
+      const result: LevelResult = {
+        levelId,
+        score: finalScore,
+        correctCount: finalCorrect,
+        totalCount: total,
+        bestCombo: finalBestCombo,
+        stars,
+        clearedAt: Date.now(),
+      }
+      const isNewBest = saveBestResultIfBetter(result)
+      if (stars >= 2) sound.win()
+      else sound.lose()
+      onFinish(result, isNewBest)
+    },
+    [levelId, onFinish, sound],
+  )
+
+  const resolve = useCallback(
+    (isCorrect: boolean) => {
+      setStatus(isCorrect ? 'correct' : 'wrong')
+
+      let nextScore = score
+      let nextCombo = combo
+      let nextBestCombo = bestCombo
+      let nextCorrect = correctCount
+      let nextLives = lives
+
+      if (isCorrect) {
+        const tier = combo >= 5 ? 2 : combo >= 3 ? 1 : 0
+        const multiplier = tier === 2 ? 2 : tier === 1 ? 1.5 : 1
+        const timeBonus = Math.round(timeLeft * 2)
+        const gained = Math.round(100 * multiplier) + timeBonus
+
+        nextScore = score + gained
+        nextCombo = combo + 1
+        nextBestCombo = Math.max(bestCombo, nextCombo)
+        nextCorrect = correctCount + 1
+
+        setScore(nextScore)
+        setCombo(nextCombo)
+        setBestCombo(nextBestCombo)
+        setCorrectCount(nextCorrect)
+        setScorePop({ id: popIdRef.current++, value: gained })
+        sound.correct()
+        if (nextCombo === 3 || (nextCombo >= 5 && nextCombo % 5 === 0)) {
+          window.setTimeout(() => sound.combo(nextCombo >= 5 ? 2 : 1), 260)
+        }
+      } else {
+        nextCombo = 0
+        nextLives = lives - 1
+        setCombo(0)
+        setLives(nextLives)
+        setShake(true)
+        sound.wrong()
+        window.setTimeout(() => setShake(false), 450)
+      }
+
+      const isLastQuestion = qIndex + 1 >= questions.length
+      const outOfLives = nextLives <= 0
+
+      advanceTimer.current = window.setTimeout(
+        () => {
+          if (isLastQuestion || outOfLives) {
+            finishSession(nextScore, nextCorrect, nextBestCombo)
+          } else {
+            setQIndex((i) => i + 1)
+          }
+        },
+        isCorrect ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG,
+      )
+    },
+    [score, combo, bestCombo, correctCount, lives, timeLeft, qIndex, questions.length, sound, finishSession],
+  )
+
+  useEffect(() => {
+    if (status === 'playing' && timeLeft <= 0) {
+      resolve(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, status])
+
+  const handleTrayTap = (tile: Tile) => {
+    if (status !== 'playing') return
+    const emptyIndex = slots.findIndex((s) => s === null)
+    if (emptyIndex === -1) return
+
+    const nextSlots = [...slots]
+    nextSlots[emptyIndex] = tile
+    setSlots(nextSlots)
+    setTray((t) => t.filter((x) => x.uid !== tile.uid))
+    sound.place()
+
+    if (nextSlots.every((s) => s !== null)) {
+      const built = nextSlots.map((s) => (s as Tile).word).join(' ')
+      const isCorrect = built === question.words.join(' ')
+      window.setTimeout(() => resolve(isCorrect), 220)
+    }
+  }
+
+  const handleSlotTap = (index: number) => {
+    if (status !== 'playing') return
+    const tile = slots[index]
+    if (!tile) return
+    const nextSlots = [...slots]
+    nextSlots[index] = null
+    setSlots(nextSlots)
+    setTray((t) => [...t, tile])
+    sound.remove()
+  }
+
+  const timerPct = (timeLeft / level.timeLimitSec) * 100
+  const timerClass = timeLeft <= 4 ? 'urgent' : timeLeft <= level.timeLimitSec * 0.4 ? 'warn' : ''
+
+  return (
+    <div
+      className={styles.screen}
+      style={{ ['--bg1' as string]: level.gradient[1], ['--bg2' as string]: level.gradient[0] }}
+    >
+      <div className={`${styles.shakeTarget} ${shake ? 'shake' : ''}`}>
+        <div className={styles.hud}>
+          <button className={styles.backButton} onClick={onExit} aria-label="レベル選択に戻る">
+            ←
+          </button>
+          <span className={styles.levelTag}>
+            {level.icon} {level.title}
+          </span>
+          <span className={styles.progress}>
+            {qIndex + 1} / {questions.length}
+          </span>
+          <div className={styles.spacer} />
+          <div className={styles.hearts}>
+            {Array.from({ length: START_LIVES }).map((_, i) => (
+              <span key={i} className={i >= lives ? styles.heartLost : ''}>
+                ❤️
+              </span>
+            ))}
+          </div>
+          <div className={`${styles.comboBadge} ${combo >= 5 ? styles.hot : ''}`} style={{ opacity: combo > 0 ? 1 : 0.35 }}>
+            <span className={styles.flame}>🔥</span> COMBO {combo}
+          </div>
+          <div className={styles.scoreWrap}>
+            {score}
+            {scorePop && (
+              <span key={scorePop.id} className={styles.scorePop}>
+                +{scorePop.value}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.timerTrack}>
+          <div
+            className={`${styles.timerFill} ${timerClass ? styles[timerClass] : ''}`}
+            style={{ width: `${timerPct}%` }}
+          />
+        </div>
+
+        <div className={styles.promptArea}>
+          <p className={styles.jpText}>{question.jp}</p>
+          {status === 'wrong' && (
+            <p className={`${styles.note} ${styles.noteWrong}`}>正解: {question.words.join(' ')}</p>
+          )}
+          {status === 'correct' && question.note && <span className={styles.note}>{question.note}</span>}
+        </div>
+
+        <div className={styles.slotsArea}>
+          <div className={styles.slotsRow}>
+            {slots.map((tile, i) => (
+              <AnswerSlot
+                key={i}
+                word={tile ? tile.word : null}
+                colorIndex={tile ? tile.uid : i}
+                onClick={() => handleSlotTap(i)}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.trayArea}>
+          <div className={styles.trayRow}>
+            {tray.map((tile) => (
+              <WordTile
+                key={tile.uid}
+                word={tile.word}
+                colorIndex={tile.uid}
+                onClick={() => handleTrayTap(tile)}
+                disabled={status !== 'playing'}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {status === 'correct' && (
+        <>
+          <div className={`${styles.flashOverlay} ${styles.correct}`} />
+          <Confetti key={qIndex} />
+        </>
+      )}
+      {status === 'wrong' && <div className={`${styles.flashOverlay} ${styles.wrong}`} />}
+    </div>
+  )
+}

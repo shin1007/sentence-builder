@@ -1,0 +1,114 @@
+:root {
+  --color-bg-1: #2c1c9c;
+  --color-bg-2: #4b32e0;
+  --color-bg-3: #6f5bff;
+  --color-accent-yellow: #ffd23f;
+  --color-accent-teal: #5be0c0;
+  --color-accent-pink: #ff5f9e;
+  --color-accent-orange: #ff8a3d;
+  --color-white: #ffffff;
+  --color-ink: #2c1c9c;
+  --color-success: #33d17a;
+  --color-danger: #ff4f6d;
+  --font-family: 'Hiragino Maru Gothic ProN', 'Rounded Mplus 1c', 'Yu Gothic', 'Segoe UI',
+    system-ui, sans-serif;
+  --app-vw: 100vw;
+  --app-vh: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg-1);
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--color-white);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- forced-landscape rotation rig ---------- */
+
+.app-root {
+  position: fixed;
+  inset: 0;
+  width: var(--app-vw);
+  height: var(--app-vh);
+  overflow: hidden;
+  background: #000;
+}
+
+.app-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.app-root.is-landscape .app-canvas {
+  width: var(--app-vw);
+  height: var(--app-vh);
+}
+
+.app-root.is-portrait .app-canvas {
+  width: var(--app-vh);
+  height: var(--app-vw);
+  transform-origin: top left;
+  transform: rotate(90deg) translateY(-100%);
+}
+
+.app-canvas > * {
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- shared animation ----------
+   Note: this file is plain (non-module) CSS, so `.shake` below can reference
+   `shake-x` directly. Vite's CSS Modules scoping renames any `animation:`
+   identifier it finds even without a local @keyframes to match, so every
+   *.module.css file below defines its own copy of the keyframes it uses
+   instead of sharing one from here. */
+
+@keyframes shake-x {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-10px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-6px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.shake {
+  animation: shake-x 0.42s ease;
+}
