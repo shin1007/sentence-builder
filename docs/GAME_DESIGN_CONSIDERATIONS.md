@@ -45,7 +45,7 @@
 - ✅ (#4, #5) **バックグラウンド時のタイマー**: `visibilitychange` を監視し、タブ非表示中はカウントダウン（インターバル）と正解後の自動遷移（`setTimeout`）の両方を一時停止するようにした。
 - **PWA更新戦略**: `registerType: 'autoUpdate'`。新コンテンツ配信時にプレイ中ユーザーへ更新を促す導線があるか。
 - **オフライン完結**: 効果音はWeb Audio合成でオフライン完結。ただしTTSはOS内蔵音声依存のため厳密には非オフライン。
-- 🔶 (#15) **セーフエリア対応**: `src/styles/global.css` の `.app-canvas` に、向き別に物理→視覚エッジを変換する `--safe-top/right/bottom/left` カスタムプロパティを追加。`is-landscape` は1:1、`is-portrait`（CSS回転中）は `rotate(90deg)` の回転方向を数式で導出し、物理top→視覚left、物理right→視覚top、物理bottom→視覚right、物理left→視覚bottomの対応で `env(safe-area-inset-*)` を割り当てた。各画面の `.screen` に `padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left)` を適用（ノッチなし端末では全て0pxなので既存レイアウトに影響なし。Playwrightで確認済み）。**iPhone実機での見た目確認待ち** — 方向が逆だと分かったら `global.css` の `is-portrait` ブロックの4行を入れ替えるだけで直せる。
+- ✅ (#15) **セーフエリア対応**: `src/styles/global.css` の `.app-canvas` に、向き別に物理→視覚エッジを変換する `--safe-top/right/bottom/left` カスタムプロパティを追加。`is-landscape` は1:1、`is-portrait`（CSS回転中）は `rotate(90deg)` の回転方向を数式で導出し、物理top→視覚left、物理right→視覚top、物理bottom→視覚right、物理left→視覚bottomの対応で `env(safe-area-inset-*)` を割り当てた。各画面の `.screen` に `padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left)` を適用（ノッチなし端末では全て0pxなので既存レイアウトに影響なし）。iPhone実機で確認済み — 方向は正しかった。
 
 ## 7. データ・プライバシー（子ども向けアプリ特有）
 
@@ -60,11 +60,11 @@
 
 ## 9. 運用・グロース観点
 
-- **リプレイ性**: 1セッション10問固定で短く区切られているのは良いが、飽き対策（デイリーチャレンジ、実績、ランキング）は現状なし。
+- ✅ (#16) **リプレイ性**: `src/utils/achievements.ts` に実績（バッジ）システムを追加。はじめての一歩・パーフェクト・コンボマスター・三ツ星・全制覇の5種類。レベルクリア後に新規解除分を`ResultScreen`でバナー表示し、タイトル画面の🏆ボタンから一覧（`AchievementsScreen`）で確認できる（未解除は🔒「？？？」表示）。デイリーチャレンジ・ランキングは未着手。
 - **共有機能なし**: スコアのSNSシェア導線がなく、口コミ拡散の機会を逃している可能性。
 - **保護者向け情報**: 「何を学べるか」「進捗確認」を見せる画面がなく、子ども個人のプレイのみで完結している。
 
 ## 次にやるとよさそうな候補（優先度順の目安）
 
-1. セーフエリア対応（#15）のiPhone実機確認 — Vercelのプレビュー/本番デプロイを開いて、ノッチ/ホームインジケーター周りにUIが隠れていないか確認する。ズレていたら `global.css` の `is-portrait` ブロックの `--safe-*` の割り当てを入れ替える。
-2. リプレイ性向上（デイリーチャレンジ、実績など）
+1. デイリーチャレンジ・ランキングなど、実績（#16）以外のリプレイ性向上策
+2. スコアリングの公平性（速さ偏重の見直し）や難易度カーブの調整

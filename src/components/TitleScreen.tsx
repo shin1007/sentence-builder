@@ -3,7 +3,13 @@ import { useSoundContext } from '../context/SoundContext'
 import { useSettingsContext } from '../context/SettingsContext'
 import styles from './TitleScreen.module.css'
 
-export default function TitleScreen({ onStart }: { onStart: () => void }) {
+export default function TitleScreen({
+  onStart,
+  onAchievements,
+}: {
+  onStart: () => void
+  onAchievements: () => void
+}) {
   const sound = useSoundContext()
   const { capitalizeFirst, toggleCapitalizeFirst, practiceMode, togglePracticeMode } = useSettingsContext()
 
@@ -74,6 +80,15 @@ export default function TitleScreen({ onStart }: { onStart: () => void }) {
       <div className={styles.badgeRow}>
         <span className={styles.badge}>📱 横画面プレイ</span>
         <span className={styles.badge}>📡 オフライン対応</span>
+        <button
+          className={`${styles.badge} ${styles.badgeButton}`}
+          onClick={() => {
+            sound.click()
+            onAchievements()
+          }}
+        >
+          🏆 実績
+        </button>
       </div>
     </div>
   )
