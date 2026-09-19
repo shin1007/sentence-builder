@@ -32,6 +32,28 @@ describe('pickQuestions', () => {
       expect(QUESTIONS[levelId].map((question) => question.id)).toEqual(before)
     }
   })
+
+  it('includes every priority id when it fits within count', () => {
+    const levelId = LEVEL_IDS[0]
+    const priorityIds = QUESTIONS[levelId].slice(0, 3).map((question) => question.id)
+    const picked = pickQuestions(levelId, 10, priorityIds)
+    const pickedIds = picked.map((question) => question.id)
+    for (const id of priorityIds) {
+      expect(pickedIds).toContain(id)
+    }
+  })
+
+  it('ignores priority ids that are not in the level pool', () => {
+    const levelId = LEVEL_IDS[0]
+    expect(() => pickQuestions(levelId, 10, ['does-not-exist'])).not.toThrow()
+    expect(pickQuestions(levelId, 10, ['does-not-exist'])).toHaveLength(10)
+  })
+
+  it('still returns the requested count with no priority ids given', () => {
+    for (const levelId of LEVEL_IDS) {
+      expect(pickQuestions(levelId, 10, [])).toHaveLength(10)
+    }
+  })
 })
 
 describe('question bank data integrity', () => {
