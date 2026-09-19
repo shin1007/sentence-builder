@@ -1,9 +1,11 @@
 import { requestFullscreenLandscape } from '../hooks/useForcedLandscape'
 import { useSoundContext } from '../context/SoundContext'
+import { useSettingsContext } from '../context/SettingsContext'
 import styles from './TitleScreen.module.css'
 
 export default function TitleScreen({ onStart }: { onStart: () => void }) {
   const sound = useSoundContext()
+  const { capitalizeFirst, toggleCapitalizeFirst } = useSettingsContext()
 
   const handleStart = () => {
     sound.unlock()
@@ -37,6 +39,14 @@ export default function TitleScreen({ onStart }: { onStart: () => void }) {
           aria-label="音楽の切り替え"
         >
           {sound.musicOn ? '🎵' : '🚫'}
+        </button>
+        <button
+          className={`${styles.iconButton} ${styles.textIcon} ${capitalizeFirst ? '' : styles.off}`}
+          onClick={toggleCapitalizeFirst}
+          aria-label="文頭を大文字にするかの切り替え"
+          title="文頭を大文字にするか"
+        >
+          {capitalizeFirst ? 'Aa' : 'aa'}
         </button>
       </div>
 
