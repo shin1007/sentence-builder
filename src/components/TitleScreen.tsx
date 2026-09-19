@@ -5,7 +5,7 @@ import styles from './TitleScreen.module.css'
 
 export default function TitleScreen({ onStart }: { onStart: () => void }) {
   const sound = useSoundContext()
-  const { capitalizeFirst, toggleCapitalizeFirst } = useSettingsContext()
+  const { capitalizeFirst, toggleCapitalizeFirst, practiceMode, togglePracticeMode } = useSettingsContext()
 
   const handleStart = () => {
     sound.unlock()
@@ -47,6 +47,14 @@ export default function TitleScreen({ onStart }: { onStart: () => void }) {
           title="文頭を大文字にするか"
         >
           {capitalizeFirst ? 'Aa' : 'aa'}
+        </button>
+        <button
+          className={`${styles.iconButton} ${practiceMode ? '' : styles.off}`}
+          onClick={togglePracticeMode}
+          aria-label="れんしゅうモード（タイマー・ハートなし）の切り替え"
+          title="れんしゅうモード（タイマー・ハートなし）"
+        >
+          🧪
         </button>
       </div>
 

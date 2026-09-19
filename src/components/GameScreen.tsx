@@ -51,7 +51,7 @@ export default function GameScreen({
 }) {
   const level = getLevel(levelId)!
   const sound = useSoundContext()
-  const { capitalizeFirst } = useSettingsContext()
+  const { capitalizeFirst, practiceMode } = useSettingsContext()
 
   const questions = useMemo(() => pickQuestions(levelId, QUESTIONS_PER_SESSION), [levelId])
   const [qIndex, setQIndex] = useState(0)
@@ -104,7 +104,7 @@ export default function GameScreen({
   }, [qIndex])
 
   useEffect(() => {
-    if (status !== 'playing' || isHidden) return
+    if (status !== 'playing' || isHidden || practiceMode) return
     const id = window.setInterval(() => {
       setTimeLeft((t) => {
         const next = Math.max(0, t - 0.1)
@@ -117,7 +117,7 @@ export default function GameScreen({
       })
     }, 100)
     return () => window.clearInterval(id)
-  }, [status, qIndex, sound, isHidden])
+  }, [status, qIndex, sound, isHidden, practiceMode])
 
   useEffect(
     () => () => {
@@ -141,12 +141,14 @@ export default function GameScreen({
         stars,
         clearedAt: Date.now(),
       }
-      const isNewBest = saveBestResultIfBetter(result)
+      // Practice sessions have no timer/lives pressure, so they aren't a fair
+      // comparison against timed runs and shouldn't overwrite a real best.
+      const isNewBest = practiceMode ? false : saveBestResultIfBetter(result)
       if (stars >= 2) sound.win()
       else sound.lose()
       onFinish(result, isNewBest)
     },
-    [levelId, onFinish, sound],
+    [levelId, onFinish, sound, practiceMode],
   )
 
   const resolve = useCallback(
@@ -162,7 +164,7 @@ export default function GameScreen({
       if (isCorrect) {
         const tier = combo >= 5 ? 2 : combo >= 3 ? 1 : 0
         const multiplier = tier === 2 ? 2 : tier === 1 ? 1.5 : 1
-        const timeBonus = Math.round(timeLeft * 2)
+        const timeBonus = practiceMode ? 0 : Math.round(timeLeft * 2)
         const gained = Math.round(100 * multiplier) + timeBonus
 
         nextScore = score + gained
@@ -181,7 +183,7 @@ export default function GameScreen({
         }
       } else {
         nextCombo = 0
-        nextLives = lives - 1
+        nextLives = practiceMode ? lives : lives - 1
         setCombo(0)
         setLives(nextLives)
         setShake(true)
@@ -190,7 +192,7 @@ export default function GameScreen({
       }
 
       const isLastQuestion = qIndex + 1 >= questions.length
-      const outOfLives = nextLives <= 0
+      const outOfLives = !practiceMode && nextLives <= 0
 
       // If the player backgrounds the app right after answering, don't let a
       // native setTimeout silently skip them ahead while they're away —
@@ -210,7 +212,7 @@ export default function GameScreen({
       }
       advanceTimer.current = window.setTimeout(advance, isCorrect ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG)
     },
-    [score, combo, bestCombo, correctCount, lives, timeLeft, qIndex, questions.length, sound, finishSession],
+    [score, combo, bestCombo, correctCount, lives, timeLeft, qIndex, questions.length, sound, finishSession, practiceMode],
   )
 
   useEffect(() => {
@@ -276,18 +278,21 @@ export default function GameScreen({
           </button>
           <span className={styles.levelTag}>
             {level.icon} {level.title}
+            {practiceMode && ` 🧪`}
           </span>
           <span className={styles.progress}>
             {qIndex + 1} / {questions.length}
           </span>
           <div className={styles.spacer} />
-          <div className={styles.hearts}>
-            {Array.from({ length: START_LIVES }).map((_, i) => (
-              <span key={i} className={i >= lives ? styles.heartLost : ''}>
-                ❤️
-              </span>
-            ))}
-          </div>
+          {!practiceMode && (
+            <div className={styles.hearts}>
+              {Array.from({ length: START_LIVES }).map((_, i) => (
+                <span key={i} className={i >= lives ? styles.heartLost : ''}>
+                  ❤️
+                </span>
+              ))}
+            </div>
+          )}
           <div className={`${styles.comboBadge} ${combo >= 5 ? styles.hot : ''}`} style={{ opacity: combo > 0 ? 1 : 0.35 }}>
             <span className={styles.flame}>🔥</span> COMBO {combo}
           </div>
@@ -301,12 +306,14 @@ export default function GameScreen({
           </div>
         </div>
 
-        <div className={styles.timerTrack}>
-          <div
-            className={`${styles.timerFill} ${timerClass ? styles[timerClass] : ''}`}
-            style={{ width: `${timerPct}%` }}
-          />
-        </div>
+        {!practiceMode && (
+          <div className={styles.timerTrack}>
+            <div
+              className={`${styles.timerFill} ${timerClass ? styles[timerClass] : ''}`}
+              style={{ width: `${timerPct}%` }}
+            />
+          </div>
+        )}
 
         <div className={styles.promptArea}>
           <div className={styles.jpRow}>
