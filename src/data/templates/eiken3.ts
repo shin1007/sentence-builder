@@ -1,6 +1,6 @@
 import type { Question } from '../../types'
 import { q } from '../questionGen'
-import { THINGS, DESTINATIONS, PLACE_TYPES, FAMILY } from '../vocab'
+import { THINGS, DESTINATIONS, PLACE_TYPES, FAMILY, FOODS } from '../vocab'
 
 const PAST_ACTIVITIES = [
   { en: 'cleaned my room', jp: '部屋をそうじしました' },
@@ -191,6 +191,34 @@ const FUTURE_SUBJECTS = [
   { subjEn: 'she', doForm: 'does', subjJp: '彼女は' },
 ]
 
+// Real 3級 reading sections lean heavily on pen-pal letters, so these fixed
+// opening/closing phrases mirror that register without copying any exam text.
+const LETTER_PHRASES = [
+  { en: 'Thank you for your letter.', jp: '手紙をありがとう。' },
+  { en: 'How are you doing these days?', jp: '最近どうですか？' },
+  { en: "I'm looking forward to seeing you.", jp: '会えるのを楽しみにしています。' },
+  { en: 'I had a great time at your house.', jp: 'あなたの家でとても楽しい時間を過ごしました。' },
+  { en: 'Please write back soon.', jp: 'すぐに返事を書いてください。' },
+  { en: 'I hope to see you again soon.', jp: 'また近いうちに会えるといいですね。' },
+  { en: 'Thank you for inviting me to the party.', jp: 'パーティーに招待してくれてありがとう。' },
+  { en: 'I miss you very much.', jp: 'あなたにとても会いたいです。' },
+  { en: 'Please say hello to your family.', jp: 'ご家族によろしくお伝えください。' },
+  { en: "I can't wait for summer vacation.", jp: '夏休みが待ちきれません。' },
+]
+
+const WEEKEND_ACTIVITIES = [
+  { en: 'go swimming', jp: '泳ぎに行くつもりです' },
+  { en: 'go fishing', jp: '釣りに行くつもりです' },
+  { en: 'go hiking', jp: 'ハイキングに行くつもりです' },
+  { en: 'go camping', jp: 'キャンプに行くつもりです' },
+  { en: 'go shopping', jp: '買い物に行くつもりです' },
+  { en: 'visit my friend', jp: '友達を訪ねるつもりです' },
+  { en: 'watch a baseball game', jp: '野球の試合を見るつもりです' },
+  { en: 'clean my house', jp: '家をそうじするつもりです' },
+  { en: 'study for the exam', jp: '試験のために勉強するつもりです' },
+  { en: 'relax at home', jp: '家でゆっくりするつもりです' },
+]
+
 export const eiken3Questions: Question[] = [
   ...PAST_ACTIVITIES.map((p, i) => q(`e3-t1-${i}`, `私は昨日${p.jp}。`, `I ${p.en} yesterday.`, '過去形')),
   ...DESTINATIONS.map((d, i) =>
@@ -260,5 +288,18 @@ export const eiken3Questions: Question[] = [
   ...FAMILY.map((f, i) => {
     const adv = ADV_COMPARATIVE[i % ADV_COMPARATIVE.length]
     return q(`e3-t18-${i}`, `私の${f.jp}は私${adv.jp}。`, `My ${f.en} ${adv.en} than me.`, '比較級')
+  }),
+  ...LETTER_PHRASES.map((s, i) => q(`e3-t19-${i}`, s.jp, s.en, '手紙表現')),
+  ...WEEKEND_ACTIVITIES.map((a, i) =>
+    q(`e3-t20-${i}`, `私は今週末${a.jp}。`, `I'm planning to ${a.en} this weekend.`, 'be planning to'),
+  ),
+  ...FOODS.map((a, i) => {
+    const b = FOODS[(i + 7) % FOODS.length]
+    return q(
+      `e3-t21-${i}`,
+      `私は${b.jp}より${a.jp}の方が好きです。`,
+      `I like ${a.plural} better than ${b.plural}.`,
+      '比較(好み)',
+    )
   }),
 ]

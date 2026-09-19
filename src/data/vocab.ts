@@ -253,6 +253,16 @@ export const PLACES_OUTDOOR: { en: string; jp: string }[] = [
   { en: 'garden', jp: '庭園' },
 ]
 
+export const DAYS_OF_WEEK: { en: string; jp: string }[] = [
+  { en: 'Monday', jp: '月曜日' },
+  { en: 'Tuesday', jp: '火曜日' },
+  { en: 'Wednesday', jp: '水曜日' },
+  { en: 'Thursday', jp: '木曜日' },
+  { en: 'Friday', jp: '金曜日' },
+  { en: 'Saturday', jp: '土曜日' },
+  { en: 'Sunday', jp: '日曜日' },
+]
+
 export const OBJECTS_WRITTEN: Noun[] = [
   { en: 'book', jp: '本', article: 'a' },
   { en: 'novel', jp: '小説', article: 'a' },

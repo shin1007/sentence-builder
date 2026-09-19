@@ -1,6 +1,6 @@
 import type { Question } from '../../types'
 import { q } from '../questionGen'
-import { THINGS, ANIMALS, FOODS, PLACES, INSTRUMENTS, SPORTS_PLAY, PLACES_OUTDOOR } from '../vocab'
+import { THINGS, ANIMALS, FOODS, PLACES, INSTRUMENTS, SPORTS_PLAY, PLACES_OUTDOOR, DAYS_OF_WEEK } from '../vocab'
 
 const ADJ_BASIC = [
   { en: 'big', jp: '大きい' },
@@ -52,6 +52,19 @@ const COMPARATIVE_ADJ = [
   { en: 'faster', jp: '速い' },
   { en: 'more expensive', jp: '高い' },
   { en: 'younger', jp: '若い' },
+]
+
+const ROUTINE_ACTIVITIES = [
+  { en: 'clean my room', jp: '部屋をそうじします' },
+  { en: 'do my homework', jp: '宿題をします' },
+  { en: 'play soccer', jp: 'サッカーをします' },
+  { en: 'visit my grandmother', jp: '祖母を訪ねます' },
+  { en: 'go shopping', jp: '買い物に行きます' },
+  { en: 'watch a movie', jp: '映画を見ます' },
+  { en: 'practice the piano', jp: 'ピアノを練習します' },
+  { en: 'play video games', jp: 'テレビゲームをします' },
+  { en: 'help my mother', jp: '母を手伝います' },
+  { en: 'read a book', jp: '本を読みます' },
 ]
 
 export const eiken4Questions: Question[] = [
@@ -143,4 +156,19 @@ export const eiken4Questions: Question[] = [
   ...PLACES.map((p, i) =>
     q(`e4-t18-${i}`, `私は毎日${p.jp}へ歩いて行きます。`, `I walk to the ${p.en} every day.`, '現在形'),
   ),
+  // Whose 〜? and weekly-routine sentences round out the 4級 grammar scope
+  // (possessive questions, days of the week) that the original 18 templates
+  // didn't cover yet.
+  ...THINGS.map((t, i) =>
+    q(`e4-t19-${i}`, `これは誰の${t.jp}ですか？`, `Whose ${t.en} is this?`, '疑問詞 Whose'),
+  ),
+  ...DAYS_OF_WEEK.map((d, i) => {
+    const activity = ROUTINE_ACTIVITIES[i % ROUTINE_ACTIVITIES.length]
+    return q(
+      `e4-t20-${i}`,
+      `私はいつも${d.jp}に${activity.jp}。`,
+      `I usually ${activity.en} on ${d.en}.`,
+      '曜日',
+    )
+  }),
 ]

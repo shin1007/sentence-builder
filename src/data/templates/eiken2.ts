@@ -291,6 +291,34 @@ const PLEASURE_NOUN = [
   { en: 'my true passion', jp: '私の本当の情熱' },
 ]
 
+// The real 2級 essay prompt is literally "give your opinion, with reasons" on
+// a social topic, so these mirror that register (all original wording).
+const OPINIONS = [
+  { en: 'we should use more renewable energy', jp: 'もっと再生可能エネルギーを使うべきだ' },
+  { en: 'technology has made our lives more convenient', jp: 'テクノロジーは私たちの生活をより便利にした' },
+  { en: 'studying abroad is a valuable experience', jp: '留学は貴重な経験だ' },
+  { en: 'the aging society is a serious problem', jp: '高齢化社会は深刻な問題だ' },
+  { en: 'online communication cannot replace face-to-face conversation', jp: 'オンラインのコミュニケーションは対面の会話に取って代わることはできない' },
+  { en: 'recycling should be mandatory', jp: 'リサイクルは義務化されるべきだ' },
+  { en: 'working from home has both advantages and disadvantages', jp: '在宅勤務には利点と欠点の両方がある' },
+  { en: 'education should focus more on critical thinking', jp: '教育はもっと批判的思考に重きを置くべきだ' },
+  { en: 'globalization has changed the way we do business', jp: 'グローバル化は私たちのビジネスのやり方を変えた' },
+  { en: "protecting the environment is everyone's responsibility", jp: '環境を守ることは全員の責任だ' },
+]
+
+const REASONS = [
+  { en: 'it reduces air pollution', jp: 'それが大気汚染を減らすから' },
+  { en: 'it saves natural resources', jp: 'それが天然資源を節約するから' },
+  { en: 'it helps students learn new cultures', jp: 'それが生徒が新しい文化を学ぶ助けになるから' },
+  { en: 'it improves communication skills', jp: 'それがコミュニケーション能力を向上させるから' },
+  { en: 'it gives workers more free time', jp: 'それが労働者によりゆとりを与えるから' },
+  { en: 'it reduces traffic in the city', jp: 'それが都市の交通を減らすから' },
+  { en: 'it prepares students for the future', jp: 'それが生徒を将来に備えさせるから' },
+  { en: 'it protects endangered species', jp: 'それが絶滅危惧種を守るから' },
+  { en: 'it lowers medical costs', jp: 'それが医療費を減らすから' },
+  { en: 'it creates new job opportunities', jp: 'それが新しい雇用機会を生み出すから' },
+]
+
 export const eiken2Questions: Question[] = [
   ...ADVICE_VP.map((a, i) =>
     q(`e2-t1-${i}`, `もし私があなたなら、${a.jp}。`, `If I were you, I would ${a.en}.`, '仮定法過去'),
@@ -347,4 +375,8 @@ export const eiken2Questions: Question[] = [
     const p = PLEASURE_NOUN[i % PLEASURE_NOUN.length]
     return q(`e2-t18-${i}`, `${g.jp}は${p.jp}です。`, `${g.en} is ${p.en}.`, '動名詞主語')
   }),
+  ...OPINIONS.map((o, i) => q(`e2-t19-${i}`, `私は${o.jp}と思います。`, `I think that ${o.en}.`, '意見文 I think that')),
+  ...REASONS.map((r, i) =>
+    q(`e2-t20-${i}`, `一つの理由は${r.jp}ということです。`, `One reason is that ${r.en}.`, '理由を述べる'),
+  ),
 ]

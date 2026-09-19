@@ -236,6 +236,45 @@ const PRODUCTS = [
   { en: 'oranges', jp: 'オレンジ' },
 ]
 
+const ECO_ACTIONS = [
+  { en: 'recycle cans and bottles', jp: '缶とびんをリサイクルする' },
+  { en: 'save electricity', jp: '電気を節約する' },
+  { en: 'use public transportation', jp: '公共交通機関を利用する' },
+  { en: 'reduce plastic waste', jp: 'プラスチックごみを減らす' },
+  { en: 'turn off the lights', jp: '電気を消す' },
+  { en: 'walk instead of driving', jp: '車の代わりに歩く' },
+  { en: 'plant more trees', jp: 'もっと木を植える' },
+  { en: 'reuse shopping bags', jp: '買い物袋を再利用する' },
+  { en: 'save water', jp: '水を節約する' },
+  { en: 'buy local food', jp: '地元の食べ物を買う' },
+]
+
+// Kept as short noun phrases ("too much TV", "too much gaming") rather than
+// verb+object gerunds ("too much watching TV"), which read as ungrammatical.
+const TECH_USE = [
+  { en: 'smartphone use', jp: 'スマートフォンの使用' },
+  { en: 'TV', jp: 'テレビ' },
+  { en: 'gaming', jp: 'ゲーム' },
+  { en: 'internet use', jp: 'インターネットの使用' },
+  { en: 'texting', jp: 'メールを送ること' },
+  { en: 'social media', jp: 'SNS' },
+  { en: 'computer use', jp: 'コンピューターの使用' },
+  { en: 'sitting', jp: '座っていること' },
+]
+
+const HEALTH_HABITS = [
+  { en: 'get enough sleep', jp: '十分な睡眠をとる' },
+  { en: 'exercise', jp: '運動する' },
+  { en: 'eat vegetables', jp: '野菜を食べる' },
+  { en: 'drink water', jp: '水を飲む' },
+  { en: 'walk for thirty minutes', jp: '30分歩く' },
+  { en: 'stretch', jp: 'ストレッチをする' },
+  { en: 'wash my hands', jp: '手を洗う' },
+  { en: 'eat breakfast', jp: '朝食を食べる' },
+  { en: 'avoid junk food', jp: 'ジャンクフードを避ける' },
+  { en: 'take a break', jp: '休憩をとる' },
+]
+
 export const eikenPre2Questions: Question[] = [
   ...DESTINATIONS.map((d, i) => {
     const n = YEARS_NUM[i % YEARS_NUM.length]
@@ -346,5 +385,21 @@ export const eikenPre2Questions: Question[] = [
   }),
   ...ANIMALS.map((a, i) =>
     q(`ep2-t18-${i}`, `木の下で眠っている${a.jp}を見て。`, `Look at the ${a.singular} sleeping under the tree.`, '現在分詞(形容詞的用法)'),
+  ),
+  // 準2級 reading/listening passages lean on environment, technology-use and
+  // health themes far more than personal narrative, so these add that register.
+  ...ECO_ACTIONS.map((e, i) =>
+    q(
+      `ep2-t19-${i}`,
+      `環境を守るために私たちは${e.jp}べきです。`,
+      `We should ${e.en} to protect the environment.`,
+      'should 〜',
+    ),
+  ),
+  ...TECH_USE.map((t, i) =>
+    q(`ep2-t20-${i}`, `${t.jp}のしすぎは健康に悪い可能性があります。`, `Too much ${t.en} can be bad for your health.`, 'too much 〜'),
+  ),
+  ...HEALTH_HABITS.map((h, i) =>
+    q(`ep2-t21-${i}`, `私は毎日${h.jp}ようにしています。`, `I try to ${h.en} every day.`, 'try to 〜'),
   ),
 ]
