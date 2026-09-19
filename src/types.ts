@@ -1,4 +1,4 @@
-export type LevelId = 'elementary' | 'juniorHigh' | 'highSchool'
+export type LevelId = 'eiken4' | 'eiken3' | 'eikenPre2' | 'eiken2'
 
 export interface Question {
   id: string
