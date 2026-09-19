@@ -75,6 +75,7 @@ export default function GameScreen({
 
   const lastTickSecond = useRef(-1)
   const advanceTimer = useRef<number | null>(null)
+  const pendingAdvance = useRef<(() => void) | null>(null)
   const popIdRef = useRef(0)
 
   // Freeze the countdown while the tab/app is backgrounded so returning
@@ -121,6 +122,7 @@ export default function GameScreen({
   useEffect(
     () => () => {
       if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
+      if (pendingAdvance.current) document.removeEventListener('visibilitychange', pendingAdvance.current)
     },
     [],
   )
@@ -190,16 +192,23 @@ export default function GameScreen({
       const isLastQuestion = qIndex + 1 >= questions.length
       const outOfLives = nextLives <= 0
 
-      advanceTimer.current = window.setTimeout(
-        () => {
-          if (isLastQuestion || outOfLives) {
-            finishSession(nextScore, nextCorrect, nextBestCombo)
-          } else {
-            setQIndex((i) => i + 1)
-          }
-        },
-        isCorrect ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG,
-      )
+      // If the player backgrounds the app right after answering, don't let a
+      // native setTimeout silently skip them ahead while they're away —
+      // defer the advance until the tab is visible again.
+      const advance = () => {
+        if (document.hidden) {
+          pendingAdvance.current = advance
+          document.addEventListener('visibilitychange', advance, { once: true })
+          return
+        }
+        pendingAdvance.current = null
+        if (isLastQuestion || outOfLives) {
+          finishSession(nextScore, nextCorrect, nextBestCombo)
+        } else {
+          setQIndex((i) => i + 1)
+        }
+      }
+      advanceTimer.current = window.setTimeout(advance, isCorrect ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG)
     },
     [score, combo, bestCombo, correctCount, lives, timeLeft, qIndex, questions.length, sound, finishSession],
   )
