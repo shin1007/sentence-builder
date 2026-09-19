@@ -6,14 +6,17 @@ import TitleScreen from './components/TitleScreen'
 import LevelSelect from './components/LevelSelect'
 import GameScreen from './components/GameScreen'
 import ResultScreen from './components/ResultScreen'
+import AchievementsScreen from './components/AchievementsScreen'
 import type { LevelId, LevelResult } from './types'
+import type { Achievement } from './utils/achievements'
 import './styles/global.css'
 
 type Screen =
   | { name: 'title' }
   | { name: 'levelSelect' }
   | { name: 'game'; levelId: LevelId }
-  | { name: 'result'; result: LevelResult; isNewBest: boolean }
+  | { name: 'result'; result: LevelResult; isNewBest: boolean; newAchievements: Achievement[] }
+  | { name: 'achievements' }
 
 function Shell() {
   const [screen, setScreen] = useState<Screen>({ name: 'title' })
@@ -22,8 +25,10 @@ function Shell() {
   const goTitle = useCallback(() => setScreen({ name: 'title' }), [])
   const goLevelSelect = useCallback(() => setScreen({ name: 'levelSelect' }), [])
   const goGame = useCallback((levelId: LevelId) => setScreen({ name: 'game', levelId }), [])
+  const goAchievements = useCallback(() => setScreen({ name: 'achievements' }), [])
   const goResult = useCallback(
-    (result: LevelResult, isNewBest: boolean) => setScreen({ name: 'result', result, isNewBest }),
+    (result: LevelResult, isNewBest: boolean, newAchievements: Achievement[]) =>
+      setScreen({ name: 'result', result, isNewBest, newAchievements }),
     [],
   )
 
@@ -33,7 +38,7 @@ function Shell() {
 
   return (
     <div className="app-canvas" onPointerDown={handleFirstPointer}>
-      {screen.name === 'title' && <TitleScreen onStart={goLevelSelect} />}
+      {screen.name === 'title' && <TitleScreen onStart={goLevelSelect} onAchievements={goAchievements} />}
       {screen.name === 'levelSelect' && <LevelSelect onSelect={goGame} onBack={goTitle} />}
       {screen.name === 'game' && (
         <GameScreen levelId={screen.levelId} onFinish={goResult} onExit={goLevelSelect} />
@@ -42,10 +47,12 @@ function Shell() {
         <ResultScreen
           result={screen.result}
           isNewBest={screen.isNewBest}
+          newAchievements={screen.newAchievements}
           onRetry={() => goGame(screen.result.levelId)}
           onLevelSelect={goLevelSelect}
         />
       )}
+      {screen.name === 'achievements' && <AchievementsScreen onBack={goTitle} />}
     </div>
   )
 }

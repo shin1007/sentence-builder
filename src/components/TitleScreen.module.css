@@ -153,6 +153,15 @@
   border-radius: 999px;
 }
 
+.badgeButton {
+  color: inherit;
+  transition: transform 0.1s ease;
+}
+
+.badgeButton:active {
+  transform: scale(0.92);
+}
+
 .settingsRow {
   position: absolute;
   top: 2vh;
