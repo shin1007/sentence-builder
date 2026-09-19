@@ -50,7 +50,25 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Audio extensions are deliberately left out of the precache glob: any
+        // future read-aloud voice clips (e.g. pre-rendered character-voice
+        // audio) should be fetched and cached lazily per question via the
+        // runtimeCaching rule below, not eagerly downloaded on first install.
         globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /\.(?:mp3|ogg|wav|m4a)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'voice-clips',
+              expiration: {
+                maxEntries: 2000,
+                maxAgeSeconds: 60 * 60 * 24 * 180,
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],

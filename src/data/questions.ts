@@ -1,86 +1,20 @@
 import type { LevelId, Question } from '../types'
+import { eiken4Questions } from './templates/eiken4'
+import { eiken3Questions } from './templates/eiken3'
+import { eikenPre2Questions } from './templates/eikenPre2'
+import { eiken2Questions } from './templates/eiken2'
 
+/**
+ * Each level's bank is generated from a small set of grammar templates
+ * combined with shared vocabulary banks (see data/templates/*.ts and
+ * data/vocab.ts), so the pool stays grammatically correct while covering
+ * far more lexical variety than hand-typing every sentence would allow.
+ */
 export const QUESTIONS: Record<LevelId, Question[]> = {
-  eiken4: [
-    { id: 'e4-1', jp: 'これは私のペンです。', words: ['This', 'is', 'my', 'pen.'], note: 'This is 〜.' },
-    { id: 'e4-2', jp: 'あの犬はとても大きいです。', words: ['That', 'dog', 'is', 'very', 'big.'], note: '形容詞' },
-    { id: 'e4-3', jp: '私はりんごが好きです。', words: ['I', 'like', 'apples.'], note: '一般動詞' },
-    { id: 'e4-4', jp: 'これはあなたのカバンですか？', words: ['Is', 'this', 'your', 'bag?'], note: 'be動詞の疑問文' },
-    { id: 'e4-5', jp: '私は毎朝、朝食を食べます。', words: ['I', 'eat', 'breakfast', 'every', 'morning.'], note: '現在形' },
-    { id: 'e4-6', jp: '彼女は上手にピアノを弾きます。', words: ['She', 'plays', 'the', 'piano', 'well.'], note: '三人称単数 s' },
-    { id: 'e4-7', jp: 'これは何ですか？', words: ['What', 'is', 'this?'], note: '疑問詞 What' },
-    { id: 'e4-8', jp: '私たちは公園でサッカーをします。', words: ['We', 'play', 'soccer', 'in', 'the', 'park.'], note: '場所を表す in' },
-    { id: 'e4-9', jp: 'あなたは何色が好きですか？', words: ['What', 'color', 'do', 'you', 'like?'], note: 'Do you 〜?' },
-    { id: 'e4-10', jp: '私のねこは魚が好きです。', words: ['My', 'cat', 'likes', 'fish.'], note: '三人称単数 s' },
-    { id: 'e4-11', jp: 'あなたは何匹犬を飼っていますか？', words: ['How', 'many', 'dogs', 'do', 'you', 'have?'], note: 'How many 〜?' },
-    { id: 'e4-12', jp: '彼は速く走ることができます。', words: ['He', 'can', 'run', 'fast.'], note: '助動詞 can' },
-    { id: 'e4-13', jp: '机の上に本が一冊あります。', words: ['There', 'is', 'a', 'book', 'on', 'the', 'desk.'], note: 'There is 〜.' },
-    { id: 'e4-14', jp: '私は昨日図書館へ行きました。', words: ['I', 'went', 'to', 'the', 'library', 'yesterday.'], note: '過去形(不規則)' },
-    { id: 'e4-15', jp: '彼らは公園で遊んでいます。', words: ['They', 'are', 'playing', 'in', 'the', 'park.'], note: '現在進行形' },
-    { id: 'e4-16', jp: 'あなたはどこに住んでいますか？', words: ['Where', 'do', 'you', 'live?'], note: '疑問詞 Where' },
-    { id: 'e4-17', jp: 'このかばんはあのかばんより新しいです。', words: ['This', 'bag', 'is', 'newer', 'than', 'that', 'one.'], note: '比較級(-er)' },
-    { id: 'e4-18', jp: '私は毎日学校へ歩いて行きます。', words: ['I', 'walk', 'to', 'school', 'every', 'day.'], note: '現在形' },
-  ],
-  eiken3: [
-    { id: 'e3-1', jp: '私は昨日図書館へ行きました。', words: ['I', 'went', 'to', 'the', 'library', 'yesterday.'], note: '過去形' },
-    { id: 'e3-2', jp: '彼は来週日本を訪れるつもりです。', words: ['He', 'is', 'going', 'to', 'visit', 'Japan', 'next', 'week.'], note: 'be going to' },
-    { id: 'e3-3', jp: 'このかばんはあのかばんより高いです。', words: ['This', 'bag', 'is', 'more', 'expensive', 'than', 'that', 'one.'], note: '比較級(more)' },
-    { id: 'e3-4', jp: '彼女は毎日ピアノを練習することを楽しんでいます。', words: ['She', 'enjoys', 'practicing', 'the', 'piano', 'every', 'day.'], note: '動名詞' },
-    { id: 'e3-5', jp: '私は新しい自転車が欲しいです。', words: ['I', 'want', 'to', 'buy', 'a', 'new', 'bike.'], note: 'want to 〜' },
-    { id: 'e3-6', jp: '私たちは宿題を終わらせなければなりません。', words: ['We', 'have', 'to', 'finish', 'our', 'homework.'], note: 'have to 〜' },
-    { id: 'e3-7', jp: 'あなたは昨夜何をしていましたか？', words: ['What', 'were', 'you', 'doing', 'last', 'night?'], note: '過去進行形' },
-    { id: 'e3-8', jp: '雨が降っていたので、私たちは家にいました。', words: ['Because', 'it', 'was', 'raining,', 'we', 'stayed', 'home.'], note: '理由の because' },
-    { id: 'e3-9', jp: 'もし明日晴れたら、私たちは泳ぎに行きます。', words: ['If', 'it', 'is', 'sunny', 'tomorrow,', 'we', 'will', 'go', 'swimming.'], note: '条件の if' },
-    { id: 'e3-10', jp: '彼女はとても上手に英語を話すことができます。', words: ['She', 'can', 'speak', 'English', 'very', 'well.'], note: '助動詞 can' },
-    { id: 'e3-11', jp: '私は先週新しい映画を見ました。', words: ['I', 'watched', 'a', 'new', 'movie', 'last', 'week.'], note: '過去形' },
-    { id: 'e3-12', jp: 'この山は日本で一番高いです。', words: ['This', 'mountain', 'is', 'the', 'tallest', 'in', 'Japan.'], note: '最上級' },
-    { id: 'e3-13', jp: '彼らは今、体育館でバスケットボールをしています。', words: ['They', 'are', 'playing', 'basketball', 'in', 'the', 'gym', 'now.'], note: '現在進行形' },
-    { id: 'e3-14', jp: 'あなたは将来何になりたいですか？', words: ['What', 'do', 'you', 'want', 'to', 'be', 'in', 'the', 'future?'], note: 'want to be' },
-    { id: 'e3-15', jp: '駅の近くに新しいレストランがあります。', words: ['There', 'is', 'a', 'new', 'restaurant', 'near', 'the', 'station.'], note: 'There is/are' },
-    { id: 'e3-16', jp: '私は明日までにこのレポートを終える必要があります。', words: ['I', 'need', 'to', 'finish', 'this', 'report', 'by', 'tomorrow.'], note: 'need to 〜' },
-    { id: 'e3-17', jp: '彼は去年ギターの弾き方を学びました。', words: ['He', 'learned', 'how', 'to', 'play', 'the', 'guitar', 'last', 'year.'], note: 'how to 〜' },
-    { id: 'e3-18', jp: '私の姉は私より早く起きます。', words: ['My', 'sister', 'gets', 'up', 'earlier', 'than', 'me.'], note: '比較級' },
-  ],
-  eikenPre2: [
-    { id: 'ep2-1', jp: '私は3年間この街に住んでいます。', words: ['I', 'have', 'lived', 'in', 'this', 'city', 'for', 'three', 'years.'], note: '現在完了(継続)' },
-    { id: 'ep2-2', jp: 'あなたは今までにロンドンに行ったことがありますか？', words: ['Have', 'you', 'ever', 'been', 'to', 'London?'], note: '現在完了(経験)' },
-    { id: 'ep2-3', jp: '私はちょうど宿題を終えたところです。', words: ['I', 'have', 'just', 'finished', 'my', 'homework.'], note: '現在完了(完了)' },
-    { id: 'ep2-4', jp: 'この部屋は毎日そうじされています。', words: ['This', 'room', 'is', 'cleaned', 'every', 'day.'], note: '受動態' },
-    { id: 'ep2-5', jp: 'その本は有名な作家によって書かれました。', words: ['That', 'book', 'was', 'written', 'by', 'a', 'famous', 'writer.'], note: '受動態(過去)' },
-    { id: 'ep2-6', jp: 'サッカーをしている男の子は私の弟です。', words: ['The', 'boy', 'who', 'is', 'playing', 'soccer', 'is', 'my', 'brother.'], note: '関係代名詞 who' },
-    { id: 'ep2-7', jp: 'これは彼が撮った写真です。', words: ['This', 'is', 'the', 'picture', 'that', 'he', 'took.'], note: '関係代名詞 that' },
-    { id: 'ep2-8', jp: 'あそこで走っている犬を見てください。', words: ['Look', 'at', 'the', 'dog', 'running', 'over', 'there.'], note: '現在分詞(形容詞的用法)' },
-    { id: 'ep2-9', jp: 'これは英語で書かれた手紙です。', words: ['This', 'is', 'a', 'letter', 'written', 'in', 'English.'], note: '過去分詞(形容詞的用法)' },
-    { id: 'ep2-10', jp: '彼がどこに住んでいるか知っていますか？', words: ['Do', 'you', 'know', 'where', 'he', 'lives?'], note: '間接疑問文' },
-    { id: 'ep2-11', jp: '私の妹は私と同じくらい背が高いです。', words: ['My', 'sister', 'is', 'as', 'tall', 'as', 'me.'], note: '原級比較 as〜as' },
-    { id: 'ep2-12', jp: 'この質問はあの質問と同じくらい難しいです。', words: ['This', 'question', 'is', 'as', 'difficult', 'as', 'that', 'one.'], note: '原級比較 as〜as' },
-    { id: 'ep2-13', jp: '彼は疲れすぎて歩けませんでした。', words: ['He', 'was', 'too', 'tired', 'to', 'walk.'], note: 'too 〜 to' },
-    { id: 'ep2-14', jp: '雪がとても激しく降ったので、電車が止まりました。', words: ['It', 'snowed', 'so', 'hard', 'that', 'the', 'trains', 'stopped.'], note: 'so 〜 that' },
-    { id: 'ep2-15', jp: '私たちはこのコンピューターを2年間使っています。', words: ['We', 'have', 'used', 'this', 'computer', 'for', 'two', 'years.'], note: '現在完了(継続)' },
-    { id: 'ep2-16', jp: 'あなたは何をすべきか知っていますか？', words: ['Do', 'you', 'know', 'what', 'to', 'do?'], note: '疑問詞 + to不定詞' },
-    { id: 'ep2-17', jp: 'この店では新鮮な野菜が売られています。', words: ['Fresh', 'vegetables', 'are', 'sold', 'at', 'this', 'store.'], note: '受動態' },
-    { id: 'ep2-18', jp: '木の下で眠っているねこを見て。', words: ['Look', 'at', 'the', 'cat', 'sleeping', 'under', 'the', 'tree.'], note: '現在分詞(形容詞的用法)' },
-  ],
-  eiken2: [
-    { id: 'e2-1', jp: 'もし私があなたなら、その申し出を受けるでしょう。', words: ['If', 'I', 'were', 'you,', 'I', 'would', 'accept', 'the', 'offer.'], note: '仮定法過去' },
-    { id: 'e2-2', jp: 'これは私が生まれた家です。', words: ['This', 'is', 'the', 'house', 'where', 'I', 'was', 'born.'], note: '関係副詞 where' },
-    { id: 'e2-3', jp: '彼が到着した時、私たちはすでに出発していました。', words: ['When', 'he', 'arrived,', 'we', 'had', 'already', 'left.'], note: '過去完了' },
-    { id: 'e2-4', jp: '疲れていたので、彼女は早く寝ました。', words: ['Being', 'tired,', 'she', 'went', 'to', 'bed', 'early.'], note: '分詞構文' },
-    { id: 'e2-5', jp: '私は彼に部屋をそうじさせました。', words: ['I', 'had', 'him', 'clean', 'the', 'room.'], note: '使役動詞 have' },
-    { id: 'e2-6', jp: '母は私にお皿を洗わせました。', words: ['My', 'mother', 'made', 'me', 'wash', 'the', 'dishes.'], note: '使役動詞 make' },
-    { id: 'e2-7', jp: '彼女はこの1時間、ずっと勉強し続けています。', words: ['She', 'has', 'been', 'studying', 'for', 'the', 'last', 'hour.'], note: '現在完了進行形' },
-    { id: 'e2-8', jp: '私が最初に会ったのは彼女でした。', words: ['It', 'was', 'her', 'that', 'I', 'met', 'first.'], note: '強調構文 It is 〜 that' },
-    { id: 'e2-9', jp: 'その少女は英語だけでなくフランス語も話せます。', words: ['The', 'girl', 'can', 'speak', 'not', 'only', 'English', 'but', 'also', 'French.'], note: 'not only 〜 but also' },
-    { id: 'e2-10', jp: 'どんなに疲れていても、彼はいつも笑顔です。', words: ['No', 'matter', 'how', 'tired', 'he', 'is,', 'he', 'always', 'smiles.'], note: '譲歩 no matter how' },
-    { id: 'e2-11', jp: 'あなたが手伝ってくれない限り、私はこれを終えられません。', words: ['Unless', 'you', 'help', 'me,', 'I', 'cannot', 'finish', 'this.'], note: '条件 unless' },
-    { id: 'e2-12', jp: 'これは私が今までに読んだ中で一番面白い本です。', words: ['This', 'is', 'the', 'most', 'interesting', 'book', 'I', 'have', 'ever', 'read.'], note: '最上級 + 現在完了' },
-    { id: 'e2-13', jp: '彼が言ったことは本当ではありませんでした。', words: ['What', 'he', 'said', 'was', 'not', 'true.'], note: '関係代名詞 what' },
-    { id: 'e2-14', jp: '私は彼がなぜ怒っているのか分かりません。', words: ['I', "don't", 'know', 'why', 'he', 'is', 'angry.'], note: '間接疑問文' },
-    { id: 'e2-15', jp: '彼はまるで全てを知っているかのように話します。', words: ['He', 'talks', 'as', 'if', 'he', 'knew', 'everything.'], note: '仮定法 as if' },
-    { id: 'e2-16', jp: '私は初めて出会った日を決して忘れません。', words: ['I', 'will', 'never', 'forget', 'the', 'day', 'when', 'we', 'first', 'met.'], note: '関係副詞 when' },
-    { id: 'e2-17', jp: '彼女は将来医者になりたいと言いました。', words: ['She', 'said', 'that', 'she', 'wanted', 'to', 'be', 'a', 'doctor.'], note: '間接話法' },
-    { id: 'e2-18', jp: '音楽を聞くことは私にとって一番の楽しみです。', words: ['Listening', 'to', 'music', 'is', 'my', 'greatest', 'pleasure.'], note: '動名詞主語' },
-  ],
+  eiken4: eiken4Questions,
+  eiken3: eiken3Questions,
+  eikenPre2: eikenPre2Questions,
+  eiken2: eiken2Questions,
 }
 
 export function pickQuestions(levelId: LevelId, count: number): Question[] {
