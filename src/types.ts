@@ -1,5 +1,14 @@
 export type LevelId = 'eiken4' | 'eiken3' | 'eikenPre2' | 'eiken2' | 'koukoNyushi'
 
+/** Attribution for a question adapted from a real, verifiable past exam
+ * (as opposed to an originally-written practice question). */
+export interface QuestionSource {
+  /** Where the exam is from, e.g. "神奈川県" or a school name. */
+  region: string
+  /** The exam's school year, e.g. "令和7年度(2025年)". */
+  year: string
+}
+
 export interface Question {
   id: string
   /** Japanese prompt the player translates into English word order. */
@@ -8,6 +17,8 @@ export interface Question {
   words: string[]
   /** Short grammar note shown after answering, for learning reinforcement. */
   note?: string
+  /** Present only for questions adapted from a real past exam. */
+  source?: QuestionSource
 }
 
 export interface LevelInfo {
