@@ -11,7 +11,7 @@
   - コンボ倍率・ハート（ライフ）・スコアポップアップ
   - 正解時のコンフェッティ演出、不正解時の画面シェイク＆フラッシュ
   - ベストスコア・星評価（1〜3）をローカル保存
-- **サウンドエフェクト**: 外部音声ファイルなしで、Web Audio API によりすべての効果音・BGM をリアルタイム合成。オフラインでも完全に動作します。
+- **サウンドエフェクト**: 外部音声ファイルなしで、Web Audio API によりすべての効果音をリアルタイム合成。オフラインでも完全に動作します。
 - **PWA**: `vite-plugin-pwa` によりオフラインキャッシュ・ホーム画面への追加に対応。
 
 ## 開発
@@ -36,7 +36,7 @@ node scripts/icon-gen/generate.cjs
 
 ```
 src/
-  audio/soundEngine.ts     Web Audio API による効果音・BGM合成
+  audio/soundEngine.ts     Web Audio API による効果音合成
   hooks/                   useSound, useForcedLandscape
   context/SoundContext.tsx サウンド状態の共有
   data/                    levels.ts, questions.ts（問題バンク）

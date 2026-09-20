@@ -9,13 +9,9 @@ type OscType = OscillatorType
 class SoundEngine {
   private ctx: AudioContext | null = null
   private sfxGain: GainNode | null = null
-  private musicGain: GainNode | null = null
   private noiseBuffer: AudioBuffer | null = null
 
-  private bgmNodes: { stop: () => void } | null = null
-
   sfxEnabled = true
-  musicEnabled = true
 
   private ensureContext(): AudioContext {
     if (!this.ctx) {
@@ -24,10 +20,6 @@ class SoundEngine {
       this.sfxGain = this.ctx.createGain()
       this.sfxGain.gain.value = this.sfxEnabled ? 0.8 : 0
       this.sfxGain.connect(this.ctx.destination)
-
-      this.musicGain = this.ctx.createGain()
-      this.musicGain.gain.value = this.musicEnabled ? 0.5 : 0
-      this.musicGain.connect(this.ctx.destination)
     }
     if (this.ctx.state === 'suspended') {
       void this.ctx.resume()
@@ -43,13 +35,6 @@ class SoundEngine {
   setSfxEnabled(on: boolean) {
     this.sfxEnabled = on
     if (this.sfxGain) this.sfxGain.gain.value = on ? 0.8 : 0
-  }
-
-  setMusicEnabled(on: boolean) {
-    this.musicEnabled = on
-    if (this.musicGain) this.musicGain.gain.value = on ? 0.5 : 0
-    if (on) this.startBgm()
-    else this.stopBgm()
   }
 
   private getNoiseBuffer(ctx: AudioContext): AudioBuffer {
@@ -205,50 +190,6 @@ class SoundEngine {
 
   starPop(delaySec: number) {
     this.tone({ freq: 1046.5, start: delaySec, duration: 0.18, type: 'triangle', peak: 0.3 })
-  }
-
-  startBgm() {
-    if (!this.musicEnabled || this.bgmNodes) return
-    const ctx = this.ensureContext()
-    const master = ctx.createGain()
-    master.gain.value = 1
-    master.connect(this.musicGain!)
-
-    const chord = [130.81, 164.81, 196.0] // C3 E3 G3 pad
-    const oscs = chord.map((freq) => {
-      const osc = ctx.createOscillator()
-      osc.type = 'sine'
-      osc.frequency.value = freq
-      const g = ctx.createGain()
-      g.gain.value = 0.16
-      osc.connect(g)
-      g.connect(master)
-      osc.start()
-      return osc
-    })
-
-    // slow breathing LFO on the master pad gain for a living ambience
-    const lfo = ctx.createOscillator()
-    lfo.frequency.value = 0.12
-    const lfoGain = ctx.createGain()
-    lfoGain.gain.value = 0.35
-    lfo.connect(lfoGain)
-    lfoGain.connect(master.gain)
-    master.gain.value = 0.5
-    lfo.start()
-
-    this.bgmNodes = {
-      stop: () => {
-        oscs.forEach((o) => o.stop())
-        lfo.stop()
-        master.disconnect()
-      },
-    }
-  }
-
-  stopBgm() {
-    this.bgmNodes?.stop()
-    this.bgmNodes = null
   }
 }
 
