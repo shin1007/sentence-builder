@@ -14,8 +14,8 @@ export default defineConfig({
       includeAssets: ['favicon-32.png', 'favicon-48.png', 'apple-touch-icon.png'],
       manifest: {
         id: '/',
-        name: 'ワードオーダー・ラッシュ',
-        short_name: 'ワードラッシュ',
+        name: '英単語ならべ',
+        short_name: '英単語ならべ',
         description: '英語の語順パズルゲーム。並べ替えて正しい英文を作ろう！',
         start_url: '/',
         display: 'fullscreen',
