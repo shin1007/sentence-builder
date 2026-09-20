@@ -30,6 +30,9 @@ import { q } from '../questionGen'
  * - 函館ラ・サール高等学校(私立) 令和2年度 一般入試 英語
  *   https://www.h-lasalle.ed.jp/cms/wp-content/uploads/2022/06/R2SHS1eigo_mondai.pdf / R2SHS1eigo_kaitou.pdf (1/18実施)
  *   https://www.h-lasalle.ed.jp/cms/wp-content/uploads/2022/06/R2SHS2eigo_mondai.pdf / R2SHS2eigo_kaitou.pdf (2/18実施)
+ * - 埼玉県 令和8年度 公立高等学校入学者選抜 学力検査(英語)
+ *   https://www.pref.saitama.lg.jp/documents/279416/5_08_eigo.pdf (標準問題) / 5_08_eigo_tebiki.pdf (正答)
+ *   https://www.pref.saitama.lg.jp/documents/279416/5_08_eigo_sentaku.pdf (学校選択問題) / 5_08_eigo_sentaku_tebiki.pdf (正答)
  */
 
 const KANAGAWA_R8 = { region: '神奈川県', year: '令和8年度(2026年)' }
@@ -40,6 +43,8 @@ const AICHI_R6 = { region: '愛知県', year: '令和6年度(2024年)' }
 const AICHI_R5 = { region: '愛知県', year: '令和5年度(2023年)' }
 const LASALLE_JAN = { region: '函館ラ・サール高等学校', year: '令和2年度(2020年)1月実施' }
 const LASALLE_FEB = { region: '函館ラ・サール高等学校', year: '令和2年度(2020年)2月実施' }
+const SAITAMA_R8_STD = { region: '埼玉県', year: '令和8年度(2026年) 学力検査問題(標準)' }
+const SAITAMA_R8_SENTAKU = { region: '埼玉県', year: '令和8年度(2026年) 学校選択問題' }
 
 export const koukoNyushiRealQuestions: Question[] = [
   q(
@@ -216,5 +221,26 @@ export const koukoNyushiRealQuestions: Question[] = [
     'The picture painted by my father was beautiful.',
     '整序作文(過去分詞の後置修飾)',
     LASALLE_FEB,
+  ),
+  q(
+    'kn-real-saitama-1',
+    'スタッフは、そのバッグは災害時に水が必要なときバケツのように水を貯めて運ぶことができると私たちに教えてくれました。',
+    'The staff told us that the bag can store and carry water like a bucket when we need water during disasters.',
+    '整序作文(that節)',
+    SAITAMA_R8_STD,
+  ),
+  q(
+    'kn-real-saitama-2',
+    '彼はまた、道の駅が自分の仕事への誇りを持たせてくれたとも言っています。',
+    'He also says that the roadside station has made him proud of his work.',
+    '整序作文(make+O+C)',
+    SAITAMA_R8_STD,
+  ),
+  q(
+    'kn-real-saitama-3',
+    'この技術は2017年にヨーロッパで製品として初めて販売されました。',
+    'This technology was sold for the first time as a product in Europe in 2017.',
+    '整序作文(受動態)',
+    SAITAMA_R8_SENTAKU,
   ),
 ]
