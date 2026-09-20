@@ -1,4 +1,4 @@
-export type LevelId = 'eiken4' | 'eiken3' | 'eikenPre2' | 'eiken2'
+export type LevelId = 'eiken4' | 'eiken3' | 'eikenPre2' | 'eiken2' | 'koukoNyushi'
 
 export interface Question {
   id: string

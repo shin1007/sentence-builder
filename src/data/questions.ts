@@ -3,6 +3,7 @@ import { eiken4Questions } from './templates/eiken4'
 import { eiken3Questions } from './templates/eiken3'
 import { eikenPre2Questions } from './templates/eikenPre2'
 import { eiken2Questions } from './templates/eiken2'
+import { koukoNyushiQuestions } from './templates/koukoNyushi'
 
 /**
  * Each level's bank is generated from a small set of grammar templates
@@ -15,6 +16,7 @@ export const QUESTIONS: Record<LevelId, Question[]> = {
   eiken3: eiken3Questions,
   eikenPre2: eikenPre2Questions,
   eiken2: eiken2Questions,
+  koukoNyushi: koukoNyushiQuestions,
 }
 
 function shuffle<T>(items: T[]): T[] {
