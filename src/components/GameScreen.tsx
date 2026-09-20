@@ -4,8 +4,9 @@ import { pickQuestions } from '../data/questions'
 import { useSoundContext } from '../context/SoundContext'
 import { useSettingsContext } from '../context/SettingsContext'
 import { saveBestResultIfBetter } from '../utils/storage'
-import { loadMissedIds, recordMastered, recordMiss } from '../utils/reviewQueue'
+import { loadDueIds, recordCorrect, recordMiss } from '../utils/reviewQueue'
 import { evaluateAchievements, type Achievement } from '../utils/achievements'
+import { recordDailyClear, type DailyStatus } from '../utils/dailyChallenge'
 import { speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
@@ -16,6 +17,11 @@ const QUESTIONS_PER_SESSION = 10
 const START_LIVES = 3
 const FEEDBACK_DELAY_CORRECT = 1100
 const FEEDBACK_DELAY_WRONG = 1500
+/** Grace window after the last tile lands before the answer is actually
+ * scored, so a player who notices a misplaced word (or two swapped) can
+ * still tap a filled slot to pull it back and fix it before it counts
+ * against them — filling the board no longer locks the answer in instantly. */
+const CONFIRM_GRACE_MS = 650
 
 interface Tile {
   uid: number
@@ -44,19 +50,33 @@ function displayFor(tile: Tile, capitalizeFirst: boolean): string {
 
 export default function GameScreen({
   levelId,
+  dailyQuestions,
   onFinish,
   onExit,
 }: {
   levelId: LevelId
-  onFinish: (result: LevelResult, isNewBest: boolean, newAchievements: Achievement[]) => void
+  /** When set, plays this fixed question set instead of a fresh random pick
+   * — used for the daily challenge, whose set is the same for every player
+   * on a given day. Scores/misses still feed `levelId`'s normal storage. */
+  dailyQuestions?: Question[]
+  onFinish: (
+    result: LevelResult,
+    isNewBest: boolean,
+    newAchievements: Achievement[],
+    dailyStatus?: DailyStatus,
+  ) => void
   onExit: () => void
 }) {
   const level = getLevel(levelId)!
   const sound = useSoundContext()
   const { capitalizeFirst, practiceMode } = useSettingsContext()
+  const isDaily = dailyQuestions !== undefined
 
   const questions = useMemo(
-    () => pickQuestions(levelId, QUESTIONS_PER_SESSION, loadMissedIds(levelId)),
+    () => dailyQuestions ?? pickQuestions(levelId, QUESTIONS_PER_SESSION, loadDueIds(levelId)),
+    // dailyQuestions is fixed for the lifetime of a daily-challenge screen —
+    // only levelId should ever trigger picking a fresh set.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [levelId],
   )
   const [qIndex, setQIndex] = useState(0)
@@ -77,12 +97,16 @@ export default function GameScreen({
   const [timeLeft, setTimeLeft] = useState(level.timeLimitSec)
   const [scorePop, setScorePop] = useState<{ id: number; value: number } | null>(null)
   const [shake, setShake] = useState(false)
+  // True for the brief window after the last tile lands but before it's
+  // actually scored — see CONFIRM_GRACE_MS.
+  const [awaitingConfirm, setAwaitingConfirm] = useState(false)
 
   const lastTickSecond = useRef(-1)
   const advanceTimer = useRef<number | null>(null)
   const pendingAdvance = useRef<(() => void) | null>(null)
   const advanceGeneration = useRef(0)
   const popIdRef = useRef(0)
+  const pendingCheck = useRef<{ timerId: number; isCorrect: boolean } | null>(null)
 
   // Freeze the countdown while the tab/app is backgrounded so returning
   // players don't find their time silently drained (or the round already
@@ -94,15 +118,23 @@ export default function GameScreen({
     return () => document.removeEventListener('visibilitychange', onVisibilityChange)
   }, [])
 
+  const cancelPendingCheck = useCallback(() => {
+    if (!pendingCheck.current) return
+    window.clearTimeout(pendingCheck.current.timerId)
+    pendingCheck.current = null
+    setAwaitingConfirm(false)
+  }, [])
+
   useEffect(() => {
     if (qIndex === 0) return
+    cancelPendingCheck()
     const q = questions[qIndex]
     setTray(buildTiles(q))
     setSlots(new Array(q.words.length).fill(null))
     setStatus('playing')
     setTimeLeft(level.timeLimitSec)
     lastTickSecond.current = -1
-  }, [qIndex, questions, level.timeLimitSec])
+  }, [qIndex, questions, level.timeLimitSec, cancelPendingCheck])
 
   useEffect(() => {
     if (sound.sfxOn) speakJapanese(questions[qIndex].jp)
@@ -130,6 +162,7 @@ export default function GameScreen({
       advanceGeneration.current++
       if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
       if (pendingAdvance.current) document.removeEventListener('visibilitychange', pendingAdvance.current)
+      if (pendingCheck.current) window.clearTimeout(pendingCheck.current.timerId)
     },
     [],
   )
@@ -149,14 +182,16 @@ export default function GameScreen({
         clearedAt: Date.now(),
       }
       // Practice sessions have no timer/lives pressure, so they aren't a fair
-      // comparison against timed runs and shouldn't overwrite a real best.
+      // comparison against timed runs and shouldn't overwrite a real best —
+      // and shouldn't count toward the daily streak either.
       const isNewBest = practiceMode ? false : saveBestResultIfBetter(result)
-      const newAchievements = evaluateAchievements(result)
+      const dailyStatus = isDaily && !practiceMode ? recordDailyClear() : undefined
+      const newAchievements = evaluateAchievements(result, dailyStatus?.streak)
       if (stars >= 2) sound.win()
       else sound.lose()
-      onFinish(result, isNewBest, newAchievements)
+      onFinish(result, isNewBest, newAchievements, dailyStatus)
     },
-    [levelId, onFinish, sound, practiceMode],
+    [levelId, onFinish, sound, practiceMode, isDaily],
   )
 
   const resolve = useCallback(
@@ -186,7 +221,7 @@ export default function GameScreen({
         setCorrectCount(nextCorrect)
         setScorePop({ id: popIdRef.current++, value: gained })
         sound.correct()
-        recordMastered(levelId, question.id)
+        recordCorrect(levelId, question.id)
         if (nextCombo === 3 || (nextCombo >= 5 && nextCombo % 5 === 0)) {
           window.setTimeout(() => sound.combo(nextCombo >= 5 ? 2 : 1), 260)
         }
@@ -225,9 +260,10 @@ export default function GameScreen({
 
       // Don't advance while the English sentence is still being read aloud —
       // wait for playback to finish (in addition to the usual feedback
-      // delay) so the audio for this question is never cut short.
-      const speechDone =
-        isCorrect && sound.sfxOn ? speakEnglish(question.words.join(' ')) : Promise.resolve()
+      // delay) so the audio for this question is never cut short. Read it
+      // on a wrong answer too, alongside the "正解: ..." text, so missing a
+      // question still reinforces how the correct sentence actually sounds.
+      const speechDone = sound.sfxOn ? speakEnglish(question.words.join(' ')) : Promise.resolve()
       const minDelay = new Promise<void>((res) => {
         advanceTimer.current = window.setTimeout(res, isCorrect ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG)
       })
@@ -252,6 +288,7 @@ export default function GameScreen({
 
   useEffect(() => {
     if (status === 'playing' && timeLeft <= 0) {
+      cancelPendingCheck()
       resolve(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -262,8 +299,18 @@ export default function GameScreen({
     speakEnglish(question.words.join(' '))
   }
 
+  const confirmNow = () => {
+    if (!pendingCheck.current) return
+    const { isCorrect } = pendingCheck.current
+    window.clearTimeout(pendingCheck.current.timerId)
+    pendingCheck.current = null
+    setAwaitingConfirm(false)
+    sound.click()
+    resolve(isCorrect)
+  }
+
   const handleTrayTap = (tile: Tile) => {
-    if (status !== 'playing') return
+    if (status !== 'playing' || awaitingConfirm) return
     const emptyIndex = slots.findIndex((s) => s === null)
     if (emptyIndex === -1) return
 
@@ -275,7 +322,16 @@ export default function GameScreen({
     if (nextSlots.every((s) => s !== null)) {
       const built = nextSlots.map((s) => (s as Tile).word).join(' ')
       const isCorrect = built === question.words.join(' ')
-      window.setTimeout(() => resolve(isCorrect), 220)
+      // Don't score the instant the board fills — give the player a brief
+      // window (CONFIRM_GRACE_MS) to notice a misplaced tile and tap it back
+      // to the tray before this answer locks in. See handleSlotTap.
+      setAwaitingConfirm(true)
+      const timerId = window.setTimeout(() => {
+        pendingCheck.current = null
+        setAwaitingConfirm(false)
+        resolve(isCorrect)
+      }, CONFIRM_GRACE_MS)
+      pendingCheck.current = { timerId, isCorrect }
     }
   }
 
@@ -283,6 +339,7 @@ export default function GameScreen({
     if (status !== 'playing') return
     const tile = slots[index]
     if (!tile) return
+    cancelPendingCheck()
     const nextSlots = [...slots]
     nextSlots[index] = null
     setSlots(nextSlots)
@@ -303,7 +360,7 @@ export default function GameScreen({
             ←
           </button>
           <span className={styles.levelTag}>
-            {level.icon} {level.title}
+            {isDaily ? '📅 デイリーチャレンジ' : `${level.icon} ${level.title}`}
             {practiceMode && ` 🧪`}
           </span>
           <span className={styles.progress}>
@@ -377,6 +434,14 @@ export default function GameScreen({
             ))}
           </div>
         </div>
+
+        {awaitingConfirm && (
+          <div className={styles.confirmRow}>
+            <button className={styles.confirmButton} onClick={confirmNow} aria-label="この解答で決定する">
+              ✓ これでOK（ちがう単語はタップで直せるよ）
+            </button>
+          </div>
+        )}
 
         <div className={styles.trayArea}>
           <div className={styles.trayRow} role="group" aria-label="単語カード">

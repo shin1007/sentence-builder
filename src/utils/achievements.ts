@@ -15,6 +15,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'combo-master', title: 'コンボマスター', description: '1回のプレイで8コンボ以上をつなげた', icon: '🔥' },
   { id: 'three-stars', title: '三ツ星', description: 'いずれかのレベルで星3つを獲得した', icon: '⭐' },
   { id: 'all-clear', title: '全制覇', description: 'すべてのレベルを一度はクリアした', icon: '🏆' },
+  { id: 'daily-streak-3', title: '3日連続チャレンジ', description: 'デイリーチャレンジを3日連続でクリアした', icon: '📅' },
+  { id: 'daily-streak-7', title: '1週間連続チャレンジ', description: 'デイリーチャレンジを7日連続でクリアした', icon: '🗓️' },
 ]
 
 const KEY = 'wordrush.achievements'
@@ -49,8 +51,11 @@ export function loadUnlockedIds(): string[] {
  * the 'all-clear' check sees this session's own level counted. Returns
  * only the achievements newly unlocked by this call, for a "you got a
  * new badge" notification — already-unlocked ones aren't re-returned.
+ * `dailyStreak`, when given, is the consecutive-day count just returned by
+ * recordDailyClear() for this session, for the daily-challenge streak
+ * achievements.
  */
-export function evaluateAchievements(result: LevelResult): Achievement[] {
+export function evaluateAchievements(result: LevelResult, dailyStreak?: number): Achievement[] {
   const unlocked = new Set(readUnlockedIds())
   const newlyUnlocked: Achievement[] = []
 
@@ -67,6 +72,8 @@ export function evaluateAchievements(result: LevelResult): Achievement[] {
   if (result.bestCombo >= 8) unlock('combo-master')
   if (result.stars === 3) unlock('three-stars')
   if (LEVELS.every((level) => loadBestResult(level.id) !== null)) unlock('all-clear')
+  if (dailyStreak !== undefined && dailyStreak >= 3) unlock('daily-streak-3')
+  if (dailyStreak !== undefined && dailyStreak >= 7) unlock('daily-streak-7')
 
   if (newlyUnlocked.length > 0) writeUnlockedIds([...unlocked])
   return newlyUnlocked
