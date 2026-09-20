@@ -2,7 +2,7 @@ import styles from './WordTile.module.css'
 
 export function estimateTileWidth(word: string): number {
   const bare = word.replace(/[.,?!]/g, '')
-  return Math.max(52, bare.length * 15 + 34)
+  return Math.max(60, bare.length * 18 + 40)
 }
 
 const COLOR_CLASSES = [styles.c0, styles.c1, styles.c2, styles.c3, styles.c4]
