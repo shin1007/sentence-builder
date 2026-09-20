@@ -7,8 +7,8 @@
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 75% 15%, #4b32e0 0%, #201261 60%);
-  padding: 2vh 3vh;
-  gap: 2vh;
+  padding: 2cqh 3cqh;
+  gap: 2cqh;
   overflow-y: auto;
 }
 
@@ -17,21 +17,21 @@
 }
 
 .heading {
-  font-size: clamp(1.1rem, 3.4vh, 1.8rem);
+  font-size: clamp(1.1rem, 3.4cqh, 1.8rem);
   font-weight: 800;
   margin: 0;
 }
 
 .sub {
-  font-size: clamp(0.65rem, 1.7vh, 0.9rem);
+  font-size: clamp(0.65rem, 1.7cqh, 0.9rem);
   opacity: 0.75;
-  margin: 0.4vh 0 0;
+  margin: 0.4cqh 0 0;
 }
 
 .list {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.4vh;
+  gap: 1.4cqh;
   justify-content: center;
   max-width: 1080px;
 }
@@ -39,10 +39,10 @@
 .card {
   display: flex;
   align-items: center;
-  gap: 1.2vh;
-  width: 30vh;
+  gap: 1.2cqh;
+  width: 30cqh;
   min-width: 220px;
-  padding: 1.2vh 1.6vh;
+  padding: 1.2cqh 1.6cqh;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -58,7 +58,7 @@
 }
 
 .icon {
-  font-size: clamp(1.4rem, 3.4vh, 2rem);
+  font-size: clamp(1.4rem, 3.4cqh, 2rem);
   flex: 0 0 auto;
 }
 
@@ -67,30 +67,30 @@
 }
 
 .title {
-  font-size: clamp(0.78rem, 1.9vh, 1rem);
+  font-size: clamp(0.78rem, 1.9cqh, 1rem);
   font-weight: 800;
   margin: 0;
 }
 
 .desc {
-  font-size: clamp(0.62rem, 1.4vh, 0.78rem);
+  font-size: clamp(0.62rem, 1.4cqh, 0.78rem);
   opacity: 0.8;
-  margin: 0.2vh 0 0;
+  margin: 0.2cqh 0 0;
 }
 
 .backButton {
   position: absolute;
-  top: 2vh;
-  left: 2vh;
-  width: 5.2vh;
-  height: 5.2vh;
+  top: 2cqh;
+  left: 2cqh;
+  width: 5.2cqh;
+  height: 5.2cqh;
   min-width: 38px;
   min-height: 38px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: #fff;
-  font-size: 2vh;
+  font-size: 2cqh;
   display: flex;
   align-items: center;
   justify-content: center;

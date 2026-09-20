@@ -53,28 +53,28 @@
 }
 
 .orb1 {
-  width: 42vh;
-  height: 42vh;
-  top: -14vh;
-  left: -8vh;
+  width: 42cqh;
+  height: 42cqh;
+  top: -14cqh;
+  left: -8cqh;
 }
 
 .orb2 {
-  width: 30vh;
-  height: 30vh;
-  bottom: -10vh;
-  right: -6vh;
+  width: 30cqh;
+  height: 30cqh;
+  bottom: -10cqh;
+  right: -6cqh;
 }
 
 .tileRow {
   display: flex;
-  gap: 2.2vh;
-  margin-bottom: 2vh;
+  gap: 2.2cqh;
+  margin-bottom: 2cqh;
 }
 
 .tile {
-  width: 9vh;
-  height: 9vh;
+  width: 9cqh;
+  height: 9cqh;
   min-width: 46px;
   min-height: 46px;
   border-radius: 22%;
@@ -82,7 +82,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 5vh;
+  font-size: 5cqh;
   color: #2c1c9c;
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.18), 0 12px 20px rgba(0, 0, 0, 0.25);
   animation: pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both, float-y 2.6s ease-in-out infinite;
@@ -106,26 +106,26 @@
 }
 
 .title {
-  font-size: clamp(1.8rem, 5.6vh, 3.4rem);
+  font-size: clamp(1.8rem, 5.6cqh, 3.4rem);
   font-weight: 800;
   letter-spacing: 0.02em;
   text-shadow: 0 4px 0 rgba(0, 0, 0, 0.2), 0 10px 24px rgba(0, 0, 0, 0.35);
-  margin: 0 0 0.4vh;
+  margin: 0 0 0.4cqh;
   text-align: center;
 }
 
 .subtitle {
-  font-size: clamp(0.75rem, 2vh, 1.05rem);
+  font-size: clamp(0.75rem, 2cqh, 1.05rem);
   opacity: 0.82;
-  margin: 0 0 3vh;
+  margin: 0 0 3cqh;
   letter-spacing: 0.08em;
   text-align: center;
 }
 
 .startButton {
   position: relative;
-  padding: 1.6vh 6vh;
-  font-size: clamp(1.1rem, 3vh, 1.6rem);
+  padding: 1.6cqh 6cqh;
+  font-size: clamp(1.1rem, 3cqh, 1.6rem);
   font-weight: 800;
   color: #2c1c9c;
   background: var(--color-accent-yellow);
@@ -142,14 +142,14 @@
 
 .badgeRow {
   display: flex;
-  gap: 1.4vh;
-  margin-top: 3vh;
+  gap: 1.4cqh;
+  margin-top: 3cqh;
   font-size: 0.72rem;
   opacity: 0.75;
 }
 
 .badge {
-  padding: 0.5vh 1.4vh;
+  padding: 0.5cqh 1.4cqh;
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 999px;
 }
@@ -165,22 +165,22 @@
 
 .settingsRow {
   position: absolute;
-  top: 2vh;
-  right: 2vh;
+  top: 2cqh;
+  right: 2cqh;
   display: flex;
-  gap: 1vh;
+  gap: 1cqh;
 }
 
 .iconButton {
-  width: 5.2vh;
-  height: 5.2vh;
+  width: 5.2cqh;
+  height: 5.2cqh;
   min-width: 38px;
   min-height: 38px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: #fff;
-  font-size: 2.2vh;
+  font-size: 2.2cqh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -196,7 +196,7 @@
 }
 
 .iconButton.textIcon {
-  font-size: 1.5vh;
+  font-size: 1.5cqh;
   font-weight: 800;
   letter-spacing: -0.02em;
 }

@@ -68,6 +68,14 @@ button {
   top: 0;
   left: 0;
   overflow: hidden;
+  /* Establishes a size containment context so descendants can size
+   * themselves with cqw/cqh against this element's own (post-rotation)
+   * logical width/height instead of the real, un-rotated `vw`/`vh`. When
+   * the device is held portrait and the canvas is rotated 90deg to force
+   * a landscape layout, real `vh` still resolves against the physical
+   * (tall) viewport, wildly overshooting the actual (short) space
+   * available on small phones like iPhone SE and pushing UI off-screen. */
+  container-type: size;
 }
 
 .app-root.is-landscape .app-canvas {
