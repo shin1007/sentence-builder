@@ -124,8 +124,8 @@
 
 .startButton {
   position: relative;
-  padding: 1.6cqh 6cqh;
-  font-size: clamp(1.1rem, 3cqh, 1.6rem);
+  padding: 2.2cqh 7.5cqh;
+  font-size: clamp(1.3rem, 3.8cqh, 2rem);
   font-weight: 800;
   color: #2c1c9c;
   background: var(--color-accent-yellow);
@@ -144,12 +144,12 @@
   display: flex;
   gap: 1.4cqh;
   margin-top: 3cqh;
-  font-size: 0.72rem;
+  font-size: 0.9rem;
   opacity: 0.75;
 }
 
 .badge {
-  padding: 0.5cqh 1.4cqh;
+  padding: 0.9cqh 1.9cqh;
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 999px;
 }
@@ -172,15 +172,15 @@
 }
 
 .iconButton {
-  width: 5.2cqh;
-  height: 5.2cqh;
-  min-width: 38px;
-  min-height: 38px;
+  width: 6.8cqh;
+  height: 6.8cqh;
+  min-width: 50px;
+  min-height: 50px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: #fff;
-  font-size: 2.2cqh;
+  font-size: 2.9cqh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -196,7 +196,7 @@
 }
 
 .iconButton.textIcon {
-  font-size: 1.5cqh;
+  font-size: 2cqh;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
