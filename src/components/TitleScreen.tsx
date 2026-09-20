@@ -71,7 +71,7 @@ export default function TitleScreen({
         <div className={styles.tile}>C</div>
       </div>
 
-      <h1 className={styles.title}>ワードオーダー・ラッシュ</h1>
+      <h1 className={styles.title}>英単語ならべ</h1>
       <p className={styles.subtitle}>ならべかえて えいぶんを つくろう！</p>
 
       <button className={styles.startButton} onClick={handleStart}>
