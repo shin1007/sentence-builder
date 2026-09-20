@@ -6,7 +6,7 @@ import { useSettingsContext } from '../context/SettingsContext'
 import { saveBestResultIfBetter } from '../utils/storage'
 import { loadMissedIds, recordMastered, recordMiss } from '../utils/reviewQueue'
 import { evaluateAchievements, type Achievement } from '../utils/achievements'
-import { speakEnglish, speakJapanese } from '../audio/speech'
+import { isSpeechSupported, speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
 import type { LevelId, LevelResult, Question } from '../types'
@@ -16,6 +16,15 @@ const QUESTIONS_PER_SESSION = 10
 const START_LIVES = 3
 const FEEDBACK_DELAY_CORRECT = 1100
 const FEEDBACK_DELAY_WRONG = 1500
+/** Extra pause after the English sentence finishes being read aloud, before
+ * advancing — long enough to not feel like it cuts off the instant speech
+ * ends, short enough to not feel like a stall. */
+const POST_SPEECH_DELAY = 600
+/** Safety cap on how long we'll wait for a "speech finished" event before
+ * advancing anyway. speechSynthesis exists in more browsers than it reliably
+ * fires onend/onerror in (e.g. no TTS voices installed), and this game's
+ * sentences are short enough that legitimate playback shouldn't get near it. */
+const MAX_SPEECH_WAIT = 8000
 /** Max bonus for answering with time to spare, well below the 100-pt base
  * for a correct answer so speed nudges the score without dominating it. */
 const TIME_BONUS_CAP = 30
@@ -90,6 +99,7 @@ export default function GameScreen({
   const advanceTimer = useRef<number | null>(null)
   const pendingAdvance = useRef<(() => void) | null>(null)
   const popIdRef = useRef(0)
+  const unmountedRef = useRef(false)
 
   // Freeze the countdown while the tab/app is backgrounded so returning
   // players don't find their time silently drained (or the round already
@@ -133,13 +143,19 @@ export default function GameScreen({
     return () => window.clearInterval(id)
   }, [status, qIndex, sound, isHidden, practiceMode])
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    // StrictMode's dev-only mount→unmount→mount cycle runs this cleanup
+    // once before the "real" mount, so reset the flag on (re)mount too —
+    // otherwise that synthetic unmount would permanently poison it to
+    // true and the speech-completion handler below would never fire.
+    unmountedRef.current = false
+    return () => {
+      unmountedRef.current = true
       if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
       if (pendingAdvance.current) document.removeEventListener('visibilitychange', pendingAdvance.current)
-    },
-    [],
-  )
+      if (isSpeechSupported()) window.speechSynthesis.cancel()
+    }
+  }, [])
 
   const finishSession = useCallback(
     (finalScore: number, finalCorrect: number, finalBestCombo: number) => {
@@ -230,7 +246,25 @@ export default function GameScreen({
           setQIndex((i) => i + 1)
         }
       }
-      advanceTimer.current = window.setTimeout(advance, isCorrect ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG)
+      const scheduleAdvance = (delayMs: number) => {
+        advanceTimer.current = window.setTimeout(advance, delayMs)
+      }
+
+      if (isCorrect && sound.sfxOn && isSpeechSupported()) {
+        // Wait for the English sentence to actually finish being read aloud
+        // instead of racing it against a fixed delay — a long sentence was
+        // getting cut off by the next question before the player heard it.
+        // Raced against a cap in case this browser never fires the
+        // completion event (no TTS voices installed, etc.).
+        const timeout = new Promise<void>((res) => window.setTimeout(res, MAX_SPEECH_WAIT))
+        Promise.race([speakEnglish(question.words.join(' ')), timeout])
+          .catch(() => undefined)
+          .then(() => {
+            if (!unmountedRef.current) scheduleAdvance(POST_SPEECH_DELAY)
+          })
+      } else {
+        scheduleAdvance(isCorrect ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG)
+      }
     },
     [
       score,
@@ -256,13 +290,6 @@ export default function GameScreen({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, status])
-
-  useEffect(() => {
-    if (status === 'correct' && sound.sfxOn) {
-      speakEnglish(question.words.join(' '))
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status])
 
   const handleListen = () => {
     sound.click()
@@ -301,6 +328,15 @@ export default function GameScreen({
   const handleEmptySlotTap = (index: number) => {
     if (status !== 'playing') return
     setActiveSlot(index)
+  }
+
+  const anyPlaced = slots.some((s) => s !== null)
+
+  const handleClearAll = () => {
+    if (status !== 'playing' || !anyPlaced) return
+    setSlots(new Array(slots.length).fill(null))
+    setActiveSlot(null)
+    sound.remove()
   }
 
   const timerPct = (timeLeft / level.timeLimitSec) * 100
@@ -394,6 +430,11 @@ export default function GameScreen({
               />
             ))}
           </div>
+          {status === 'playing' && anyPlaced && (
+            <button className={styles.clearButton} onClick={handleClearAll} aria-label="置いた単語をすべて選択解除する">
+              ↺ ぜんぶ もどす
+            </button>
+          )}
         </div>
 
         <div className={styles.trayArea}>
