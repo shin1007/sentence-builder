@@ -104,13 +104,24 @@ export default function GameScreen({
     lastTickSecond.current = -1
   }, [qIndex, questions, level.timeLimitSec])
 
+  // The countdown shouldn't start ticking while the Japanese prompt is still
+  // being read aloud, so wait for that playback to finish before arming it.
+  const [timerReady, setTimerReady] = useState(false)
   useEffect(() => {
-    if (sound.sfxOn) speakJapanese(questions[qIndex].jp)
+    let cancelled = false
+    setTimerReady(false)
+    const done = sound.sfxOn ? speakJapanese(questions[qIndex].jp) : Promise.resolve()
+    done.then(() => {
+      if (!cancelled) setTimerReady(true)
+    })
+    return () => {
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qIndex])
 
   useEffect(() => {
-    if (status !== 'playing' || isHidden || practiceMode) return
+    if (status !== 'playing' || isHidden || practiceMode || !timerReady) return
     const id = window.setInterval(() => {
       setTimeLeft((t) => {
         const next = Math.max(0, t - 0.1)
@@ -123,7 +134,7 @@ export default function GameScreen({
       })
     }, 100)
     return () => window.clearInterval(id)
-  }, [status, qIndex, sound, isHidden, practiceMode])
+  }, [status, qIndex, sound, isHidden, practiceMode, timerReady])
 
   useEffect(
     () => () => {
