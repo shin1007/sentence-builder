@@ -48,16 +48,6 @@ export default function TitleScreen({
           {sound.sfxOn ? '🔊' : '🔈'}
         </button>
         <button
-          className={`${styles.iconButton} ${sound.musicOn ? '' : styles.off}`}
-          onClick={() => {
-            sound.unlock()
-            sound.toggleMusic()
-          }}
-          aria-label="音楽の切り替え"
-        >
-          {sound.musicOn ? '🎵' : '🚫'}
-        </button>
-        <button
           className={`${styles.iconButton} ${styles.textIcon} ${capitalizeFirst ? '' : styles.off}`}
           onClick={toggleCapitalizeFirst}
           aria-label="文頭を大文字にするかの切り替え"
