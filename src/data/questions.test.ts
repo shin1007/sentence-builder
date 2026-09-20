@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { pickQuestions, QUESTIONS } from './questions'
-import type { LevelId } from '../types'
+import { easeInOpener, pickQuestions, QUESTIONS } from './questions'
+import type { LevelId, Question } from '../types'
 
 const LEVEL_IDS = Object.keys(QUESTIONS) as LevelId[]
 
@@ -53,6 +53,39 @@ describe('pickQuestions', () => {
     for (const levelId of LEVEL_IDS) {
       expect(pickQuestions(levelId, 10, [])).toHaveLength(10)
     }
+  })
+})
+
+describe('easeInOpener', () => {
+  const mk = (id: string, wordCount: number): Question => ({
+    id,
+    jp: 'dummy',
+    words: Array.from({ length: wordCount }, (_, i) => `w${i}`),
+  })
+
+  it('swaps in an easier question when the first pick is a long sentence', () => {
+    const pool = [mk('a', 3), mk('b', 3), mk('c', 9)]
+    const session = [mk('c', 9), mk('a', 3), mk('b', 3)]
+    const result = easeInOpener(session, pool)
+    expect(result[0].id).toBe('a')
+    expect(new Set(result.map((question) => question.id))).toEqual(new Set(session.map((question) => question.id)))
+  })
+
+  it('leaves the session untouched when the first question is already at or below the median', () => {
+    const pool = [mk('a', 3), mk('b', 3), mk('c', 9)]
+    const session = [mk('a', 3), mk('c', 9), mk('b', 3)]
+    expect(easeInOpener(session, pool)).toEqual(session)
+  })
+
+  it('leaves the session untouched when no easier question is available', () => {
+    const pool = [mk('a', 9), mk('b', 9), mk('c', 9)]
+    const session = [mk('a', 9), mk('b', 9), mk('c', 9)]
+    expect(easeInOpener(session, pool)).toEqual(session)
+  })
+
+  it('leaves a single-question session untouched', () => {
+    const pool = [mk('a', 9)]
+    expect(easeInOpener(pool, pool)).toEqual(pool)
   })
 })
 

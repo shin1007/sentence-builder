@@ -16,6 +16,9 @@ const QUESTIONS_PER_SESSION = 10
 const START_LIVES = 3
 const FEEDBACK_DELAY_CORRECT = 1100
 const FEEDBACK_DELAY_WRONG = 1500
+/** Max bonus for answering with time to spare, well below the 100-pt base
+ * for a correct answer so speed nudges the score without dominating it. */
+const TIME_BONUS_CAP = 30
 
 interface Tile {
   uid: number
@@ -170,7 +173,10 @@ export default function GameScreen({
       if (isCorrect) {
         const tier = combo >= 5 ? 2 : combo >= 3 ? 1 : 0
         const multiplier = tier === 2 ? 2 : tier === 1 ? 1.5 : 1
-        const timeBonus = practiceMode ? 0 : Math.round(timeLeft * 2)
+        // Scaled by the *fraction* of time left rather than raw seconds, so
+        // the bonus is comparable across levels even though higher levels
+        // get a shorter timeLimitSec.
+        const timeBonus = practiceMode ? 0 : Math.round(TIME_BONUS_CAP * (timeLeft / level.timeLimitSec))
         const gained = Math.round(100 * multiplier) + timeBonus
 
         nextScore = score + gained
@@ -234,6 +240,7 @@ export default function GameScreen({
       finishSession,
       practiceMode,
       levelId,
+      level.timeLimitSec,
     ],
   )
 
