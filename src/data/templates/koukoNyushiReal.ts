@@ -33,6 +33,10 @@ import { q } from '../questionGen'
  * - 埼玉県 令和8年度 公立高等学校入学者選抜 学力検査(英語)
  *   https://www.pref.saitama.lg.jp/documents/279416/5_08_eigo.pdf (標準問題) / 5_08_eigo_tebiki.pdf (正答)
  *   https://www.pref.saitama.lg.jp/documents/279416/5_08_eigo_sentaku.pdf (学校選択問題) / 5_08_eigo_sentaku_tebiki.pdf (正答)
+ * - 大阪府 令和8年度 一般選抜 学力検査(英語 A/B/C問題)
+ *   https://www.pref.osaka.lg.jp/documents/129362/r08ippan-108eigo-b-mondai.pdf / r08ippan-108eigo-b-saishi.pdf (B問題・採点資料)
+ *   https://www.pref.osaka.lg.jp/documents/129362/r08ippan-107eigo-a-mondai.pdf / r08ippan-107eigo-a-saishi.pdf (A問題・採点資料)
+ *   https://www.pref.osaka.lg.jp/documents/129362/r08ippan-109eigo-c-mondai.pdf / r08ippan-109eigo-c-saishi.pdf (C問題・採点資料)
  */
 
 const KANAGAWA_R8 = { region: '神奈川県', year: '令和8年度(2026年)' }
@@ -45,6 +49,9 @@ const LASALLE_JAN = { region: '函館ラ・サール高等学校', year: '令和
 const LASALLE_FEB = { region: '函館ラ・サール高等学校', year: '令和2年度(2020年)2月実施' }
 const SAITAMA_R8_STD = { region: '埼玉県', year: '令和8年度(2026年) 学力検査問題(標準)' }
 const SAITAMA_R8_SENTAKU = { region: '埼玉県', year: '令和8年度(2026年) 学校選択問題' }
+const OSAKA_R8_A = { region: '大阪府', year: '令和8年度(2026年) 一般選抜 英語A問題' }
+const OSAKA_R8_B = { region: '大阪府', year: '令和8年度(2026年) 一般選抜 英語B問題' }
+const OSAKA_R8_C = { region: '大阪府', year: '令和8年度(2026年) 一般選抜 英語C問題' }
 
 export const koukoNyushiRealQuestions: Question[] = [
   q(
@@ -242,5 +249,40 @@ export const koukoNyushiRealQuestions: Question[] = [
     'This technology was sold for the first time as a product in Europe in 2017.',
     '整序作文(受動態)',
     SAITAMA_R8_SENTAKU,
+  ),
+  q(
+    'kn-real-osaka-1',
+    '私はナゾーニについて話せてうれしいです。',
+    'I am glad to talk about nasoni.',
+    '整序作文(be動詞+glad+to不定詞)',
+    OSAKA_R8_B,
+  ),
+  q(
+    'kn-real-osaka-2',
+    'あなたはこれまでに富士山に登ったことがありますか。',
+    'Have you ever climbed Mt. Fuji?',
+    '現在完了(経験)',
+    OSAKA_R8_A,
+  ),
+  q(
+    'kn-real-osaka-3',
+    'あなたがもうすぐここを去ってしまうのは残念です。',
+    "I'm sorry that you will leave here soon.",
+    '語順選択問題(that節)',
+    OSAKA_R8_C,
+  ),
+  q(
+    'kn-real-osaka-4',
+    '彼らは水で満たされたボトルを持っています。',
+    'They have bottles filled with water.',
+    '語順選択問題(過去分詞の後置修飾)',
+    OSAKA_R8_C,
+  ),
+  q(
+    'kn-real-osaka-5',
+    '彼に自分の考えを表現させるのは難しかったです。',
+    'It was difficult to let him express his idea.',
+    '語順選択問題(使役動詞let)',
+    OSAKA_R8_C,
   ),
 ]
