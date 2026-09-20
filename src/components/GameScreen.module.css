@@ -62,7 +62,12 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: radial-gradient(circle at 50% 0%, var(--bg2, #4b32e0) 0%, var(--bg1, #201261) 70%);
+  /* A dark vignette sits over each level's bright accent gradient so white
+   * text/icons and the dashed answer slots stay readable — the raw level
+   * colors (e.g. the yellow/orange grade-3 theme) are too light on their
+   * own for white-on-color contrast. */
+  background: radial-gradient(circle at 50% 0%, rgba(10, 6, 40, 0.32) 0%, rgba(10, 6, 40, 0.62) 100%),
+    radial-gradient(circle at 50% 0%, var(--bg2, #4b32e0) 0%, var(--bg1, #201261) 70%);
   overflow-x: hidden;
   /* Safety net: cqh-based sizing keeps things fitting in the common case,
    * but a long sentence on a very small screen can still need more room
@@ -222,20 +227,20 @@
 
 .speakButton {
   flex: 0 0 auto;
-  height: 4cqh;
-  min-height: 30px;
-  padding: 0 1.4cqh;
+  height: 5.4cqh;
+  min-height: 40px;
+  padding: 0 2cqh;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #fff;
   font-weight: 700;
-  font-size: clamp(0.6rem, 1.5cqh, 0.82rem);
+  font-size: clamp(0.75rem, 2cqh, 1.05rem);
   white-space: nowrap;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4cqh;
+  gap: 0.5cqh;
 }
 
 .speakButton:active {
