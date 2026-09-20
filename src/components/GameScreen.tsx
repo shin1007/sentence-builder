@@ -348,6 +348,11 @@ export default function GameScreen({
               🔊
             </button>
           </div>
+          {question.source && (
+            <span className={styles.sourceTag}>
+              出典: {question.source.region} {question.source.year}
+            </span>
+          )}
           {status === 'wrong' && (
             <>
               <p className={`${styles.note} ${styles.noteWrong}`}>正解: {question.words.join(' ')}</p>

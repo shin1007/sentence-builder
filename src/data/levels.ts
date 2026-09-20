@@ -41,6 +41,16 @@ export const LEVELS: LevelInfo[] = [
     timeLimitSec: 19,
     icon: '⚡',
   },
+  {
+    id: 'koukoNyushi',
+    title: '高校入試',
+    subtitle: 'HIGH SCHOOL EXAM',
+    description: '公立高校入試レベル・整序英作文',
+    gradient: ['#ff9966', '#e6521f'],
+    accent: '#b3400f',
+    timeLimitSec: 20,
+    icon: '🎓',
+  },
 ]
 
 export const getLevel = (id: string) => LEVELS.find((l) => l.id === id)

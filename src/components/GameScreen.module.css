@@ -245,6 +245,17 @@
   opacity: 0.85;
 }
 
+.sourceTag {
+  display: inline-block;
+  margin-top: 0.6vh;
+  font-size: clamp(0.55rem, 1.2vh, 0.7rem);
+  padding: 0.2vh 1.2vh;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  opacity: 0.9;
+}
+
 .noteWrong {
   background: rgba(255, 79, 109, 0.35);
   opacity: 1;
