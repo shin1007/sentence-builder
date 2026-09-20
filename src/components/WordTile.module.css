@@ -71,8 +71,10 @@
 .slot {
   min-height: 7.2vh;
   min-width: 44px;
+  padding: 0;
   border-radius: 14px;
   border: 2px dashed rgba(255, 255, 255, 0.35);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,4 +84,11 @@
   border-style: solid;
   border-color: transparent;
   padding: 0;
+}
+
+/* The empty slot that the next tapped tray word will land in. */
+.slot.active {
+  border-style: solid;
+  border-color: var(--color-accent-yellow);
+  background: rgba(255, 210, 63, 0.18);
 }

@@ -167,9 +167,16 @@
 
 /* ---------- timer ---------- */
 
-.timerTrack {
+.timerRow {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1vh;
   margin: 0 2vh;
+}
+
+.timerTrack {
+  flex: 1 1 auto;
   height: 1.4vh;
   min-height: 8px;
   border-radius: 999px;
@@ -190,7 +197,39 @@
 
 .timerFill.urgent {
   background: linear-gradient(90deg, #ff8a3d, #ff4f6d);
+  /* Diagonal stripes give urgency a shape/texture cue, not just a color
+     shift, for players who can't distinguish the hue change. */
+  background-image: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.35) 0,
+      rgba(255, 255, 255, 0.35) 4px,
+      transparent 4px,
+      transparent 9px
+    ),
+    linear-gradient(90deg, #ff8a3d, #ff4f6d);
   animation: pulse-warn 0.5s ease-in-out infinite;
+}
+
+/* Numeric seconds-left readout so urgency is legible without relying on
+   the bar's color at all (color-vision accessibility). */
+.timerLabel {
+  flex: 0 0 auto;
+  min-width: 2.4ch;
+  text-align: right;
+  font-size: clamp(0.62rem, 1.6vh, 0.85rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.timerLabel.warn {
+  color: var(--color-accent-yellow, #ffd23f);
+  opacity: 1;
+}
+
+.timerLabel.urgent {
+  color: var(--color-accent-pink, #ff4f6d);
+  opacity: 1;
 }
 
 /* ---------- prompt ---------- */

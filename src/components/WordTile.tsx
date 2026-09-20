@@ -45,6 +45,7 @@ export function AnswerSlot({
   colorIndex,
   position,
   mismatch,
+  active,
   onClick,
 }: {
   word: string | null
@@ -55,10 +56,21 @@ export function AnswerSlot({
   /** Marks this slot's tile as landing in the wrong position, once the round
    * has been scored, so learners can see exactly which words to move. */
   mismatch?: boolean
+  /** This empty slot is the one the next tapped tray word will land in —
+   * lets a player fix a single wrong word without the fill order jumping
+   * to a different empty slot first. */
+  active?: boolean
   onClick: () => void
 }) {
   if (word === null) {
-    return <div className={styles.slot} style={{ minWidth: 52 }} aria-label={`解答欄 ${position}：空`} />
+    return (
+      <button
+        className={`${styles.slot} ${active ? styles.active : ''}`}
+        style={{ minWidth: 52 }}
+        onClick={onClick}
+        aria-label={`解答欄 ${position}：空${active ? '。次にここに置かれます' : ''}`}
+      />
+    )
   }
   const shown = displayWord ?? word
   return (

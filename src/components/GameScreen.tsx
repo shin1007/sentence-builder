@@ -69,6 +69,11 @@ export default function GameScreen({
   const [slots, setSlots] = useState<(Tile | null)[]>(() =>
     new Array(questions[0].words.length).fill(null),
   )
+  // The empty slot the next tray tap should fill. Without this, tapping a
+  // filled slot to fix a single wrong word (while other slots also happen
+  // to be empty) could drop the replacement into the *wrong* empty slot,
+  // since the default fill target is always the first empty one.
+  const [activeSlot, setActiveSlot] = useState<number | null>(null)
 
   const [lives, setLives] = useState(START_LIVES)
   const [score, setScore] = useState(0)
@@ -101,6 +106,7 @@ export default function GameScreen({
     const q = questions[qIndex]
     setTray(buildTiles(q))
     setSlots(new Array(q.words.length).fill(null))
+    setActiveSlot(null)
     setStatus('playing')
     setTimeLeft(level.timeLimitSec)
     lastTickSecond.current = -1
@@ -265,12 +271,13 @@ export default function GameScreen({
 
   const handleTrayTap = (tile: Tile) => {
     if (status !== 'playing') return
-    const emptyIndex = slots.findIndex((s) => s === null)
-    if (emptyIndex === -1) return
+    const targetIndex = activeSlot !== null && slots[activeSlot] === null ? activeSlot : slots.findIndex((s) => s === null)
+    if (targetIndex === -1) return
 
     const nextSlots = [...slots]
-    nextSlots[emptyIndex] = tile
+    nextSlots[targetIndex] = tile
     setSlots(nextSlots)
+    setActiveSlot(null)
     sound.place()
 
     if (nextSlots.every((s) => s !== null)) {
@@ -280,14 +287,20 @@ export default function GameScreen({
     }
   }
 
-  const handleSlotTap = (index: number) => {
+  const handleFilledSlotTap = (index: number) => {
     if (status !== 'playing') return
     const tile = slots[index]
     if (!tile) return
     const nextSlots = [...slots]
     nextSlots[index] = null
     setSlots(nextSlots)
+    setActiveSlot(index)
     sound.remove()
+  }
+
+  const handleEmptySlotTap = (index: number) => {
+    if (status !== 'playing') return
+    setActiveSlot(index)
   }
 
   const timerPct = (timeLeft / level.timeLimitSec) * 100
@@ -334,11 +347,19 @@ export default function GameScreen({
         </div>
 
         {!practiceMode && (
-          <div className={styles.timerTrack}>
-            <div
-              className={`${styles.timerFill} ${timerClass ? styles[timerClass] : ''}`}
-              style={{ width: `${timerPct}%` }}
-            />
+          <div className={styles.timerRow}>
+            <div className={styles.timerTrack}>
+              <div
+                className={`${styles.timerFill} ${timerClass ? styles[timerClass] : ''}`}
+                style={{ width: `${timerPct}%` }}
+              />
+            </div>
+            {/* Numeric readout + icon so urgency doesn't rely on the bar's
+                color shift alone (color-vision accessibility). */}
+            <span className={`${styles.timerLabel} ${timerClass ? styles[timerClass] : ''}`}>
+              {timerClass === 'urgent' && <span aria-hidden="true">⏰ </span>}
+              {Math.ceil(timeLeft)}
+            </span>
           </div>
         )}
 
@@ -368,7 +389,8 @@ export default function GameScreen({
                 colorIndex={tile ? tile.uid : i}
                 position={i + 1}
                 mismatch={status === 'wrong' && !!tile && tile.word !== question.words[i]}
-                onClick={() => handleSlotTap(i)}
+                active={!tile && activeSlot === i}
+                onClick={() => (tile ? handleFilledSlotTap(i) : handleEmptySlotTap(i))}
               />
             ))}
           </div>
