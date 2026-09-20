@@ -81,6 +81,7 @@ export default function GameScreen({
   const lastTickSecond = useRef(-1)
   const advanceTimer = useRef<number | null>(null)
   const pendingAdvance = useRef<(() => void) | null>(null)
+  const advanceGeneration = useRef(0)
   const popIdRef = useRef(0)
 
   // Freeze the countdown while the tab/app is backgrounded so returning
@@ -126,6 +127,7 @@ export default function GameScreen({
 
   useEffect(
     () => () => {
+      advanceGeneration.current++
       if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
       if (pendingAdvance.current) document.removeEventListener('visibilitychange', pendingAdvance.current)
     },
@@ -201,11 +203,13 @@ export default function GameScreen({
 
       const isLastQuestion = qIndex + 1 >= questions.length
       const outOfLives = !practiceMode && nextLives <= 0
+      const generation = ++advanceGeneration.current
 
       // If the player backgrounds the app right after answering, don't let a
       // native setTimeout silently skip them ahead while they're away —
       // defer the advance until the tab is visible again.
       const advance = () => {
+        if (generation !== advanceGeneration.current) return
         if (document.hidden) {
           pendingAdvance.current = advance
           document.addEventListener('visibilitychange', advance, { once: true })
@@ -218,7 +222,16 @@ export default function GameScreen({
           setQIndex((i) => i + 1)
         }
       }
-      advanceTimer.current = window.setTimeout(advance, isCorrect ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG)
+
+      // Don't advance while the English sentence is still being read aloud —
+      // wait for playback to finish (in addition to the usual feedback
+      // delay) so the audio for this question is never cut short.
+      const speechDone =
+        isCorrect && sound.sfxOn ? speakEnglish(question.words.join(' ')) : Promise.resolve()
+      const minDelay = new Promise<void>((res) => {
+        advanceTimer.current = window.setTimeout(res, isCorrect ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG)
+      })
+      Promise.all([minDelay, speechDone]).then(() => advance())
     },
     [
       score,
@@ -243,13 +256,6 @@ export default function GameScreen({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, status])
-
-  useEffect(() => {
-    if (status === 'correct' && sound.sfxOn) {
-      speakEnglish(question.words.join(' '))
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status])
 
   const handleListen = () => {
     sound.click()

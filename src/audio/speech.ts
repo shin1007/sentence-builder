@@ -8,8 +8,11 @@ export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window
 }
 
-function speak(text: string, lang: string, rate: number) {
-  if (!isSpeechSupported()) return
+// Resolves once the utterance has finished playing (or immediately if
+// speech isn't supported), so callers can wait for the audio to actually
+// finish before moving on instead of guessing at a fixed delay.
+function speak(text: string, lang: string, rate: number): Promise<void> {
+  if (!isSpeechSupported()) return Promise.resolve()
   const synth = window.speechSynthesis
   synth.cancel()
 
@@ -22,13 +25,17 @@ function speak(text: string, lang: string, rate: number) {
   const voice = voices.find((v) => v.lang === lang) ?? voices.find((v) => v.lang?.startsWith(langPrefix))
   if (voice) utter.voice = voice
 
-  synth.speak(utter)
+  return new Promise((resolve) => {
+    utter.onend = () => resolve()
+    utter.onerror = () => resolve()
+    synth.speak(utter)
+  })
 }
 
 export function speakEnglish(text: string) {
-  speak(text, 'en-US', 0.88)
+  return speak(text, 'en-US', 0.88)
 }
 
 export function speakJapanese(text: string) {
-  speak(text, 'ja-JP', 1)
+  return speak(text, 'ja-JP', 1)
 }
