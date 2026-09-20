@@ -346,6 +346,14 @@ export default function GameScreen({
     }
   }
 
+  const handleClearAll = () => {
+    if (status !== 'playing') return
+    if (!slots.some((s) => s !== null)) return
+    cancelPendingCheck()
+    setSlots(new Array(slots.length).fill(null))
+    sound.remove()
+  }
+
   const handleSlotTap = (index: number) => {
     if (status !== 'playing') return
     const tile = slots[index]
@@ -412,8 +420,8 @@ export default function GameScreen({
         <div className={styles.promptArea}>
           <div className={styles.jpRow}>
             <p className={styles.jpText}>{question.jp}</p>
-            <button className={styles.speakButton} onClick={handleListen} aria-label="英文を読み上げる">
-              🔊
+            <button className={styles.speakButton} onClick={handleListen} aria-label="英語を再生する">
+              🔊 英語を再生
             </button>
           </div>
           {question.source && (
@@ -446,11 +454,16 @@ export default function GameScreen({
           </div>
         </div>
 
-        {awaitingConfirm && (
-          <div className={styles.confirmRow}>
-            <button className={styles.confirmButton} onClick={confirmNow} aria-label="この解答で決定する">
-              ✓ これでOK（ちがう単語はタップで直せるよ）
+        {status === 'playing' && slots.some((s) => s !== null) && (
+          <div className={styles.actionRow}>
+            <button className={styles.clearAllButton} onClick={handleClearAll} aria-label="解答欄の単語をすべてトレイに戻す">
+              ↺ 全て戻す
             </button>
+            {awaitingConfirm && (
+              <button className={styles.confirmButton} onClick={confirmNow} aria-label="この解答で決定する">
+                ✓ これでOK（ちがう単語はタップで直せるよ）
+              </button>
+            )}
           </div>
         )}
 
