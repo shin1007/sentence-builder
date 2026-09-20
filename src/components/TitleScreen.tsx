@@ -1,23 +1,34 @@
 import { requestFullscreenLandscape } from '../hooks/useForcedLandscape'
 import { useSoundContext } from '../context/SoundContext'
 import { useSettingsContext } from '../context/SettingsContext'
+import { getDailyStatus } from '../utils/dailyChallenge'
 import styles from './TitleScreen.module.css'
 
 export default function TitleScreen({
   onStart,
+  onDaily,
   onAchievements,
 }: {
   onStart: () => void
+  onDaily: () => void
   onAchievements: () => void
 }) {
   const sound = useSoundContext()
   const { capitalizeFirst, toggleCapitalizeFirst, practiceMode, togglePracticeMode } = useSettingsContext()
+  const dailyStatus = getDailyStatus()
 
   const handleStart = () => {
     sound.unlock()
     sound.click()
     void requestFullscreenLandscape()
     onStart()
+  }
+
+  const handleDaily = () => {
+    sound.unlock()
+    sound.click()
+    void requestFullscreenLandscape()
+    onDaily()
   }
 
   return (
@@ -80,6 +91,11 @@ export default function TitleScreen({
       <div className={styles.badgeRow}>
         <span className={styles.badge}>📱 横画面プレイ</span>
         <span className={styles.badge}>📡 オフライン対応</span>
+        <button className={`${styles.badge} ${styles.badgeButton}`} onClick={handleDaily}>
+          📅 デイリー
+          {dailyStatus.streak > 0 && ` 🔥${dailyStatus.streak}`}
+          {dailyStatus.clearedToday && ' ✓'}
+        </button>
         <button
           className={`${styles.badge} ${styles.badgeButton}`}
           onClick={() => {
