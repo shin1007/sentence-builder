@@ -23,11 +23,23 @@ import { q } from '../questionGen'
  * - 神奈川県 令和6年度 共通選抜 学力検査(英語) 問4
  *   https://www.pref.kanagawa.jp/documents/107635/r6eigo_zen_mon.pdf
  *   https://www.pref.kanagawa.jp/documents/107635/r6eigo_zen_sei.pdf
+ * - 愛知県 令和5〜7年度 一般選抜 学力検査(英語) 大問2(2)
+ *   https://www.pref.aichi.jp/uploaded/attachment/558347.pdf (R7問題) / 554792.pdf (R7正答)
+ *   https://www.pref.aichi.jp/uploaded/attachment/510148.pdf (R6問題) / 510159.pdf (R6正答)
+ *   https://www.pref.aichi.jp/uploaded/attachment/455085.pdf (R5問題) / 455084.pdf (R5正答)
+ * - 函館ラ・サール高等学校(私立) 令和2年度 一般入試 英語
+ *   https://www.h-lasalle.ed.jp/cms/wp-content/uploads/2022/06/R2SHS1eigo_mondai.pdf / R2SHS1eigo_kaitou.pdf (1/18実施)
+ *   https://www.h-lasalle.ed.jp/cms/wp-content/uploads/2022/06/R2SHS2eigo_mondai.pdf / R2SHS2eigo_kaitou.pdf (2/18実施)
  */
 
 const KANAGAWA_R8 = { region: '神奈川県', year: '令和8年度(2026年)' }
 const KANAGAWA_R7 = { region: '神奈川県', year: '令和7年度(2025年)' }
 const KANAGAWA_R6 = { region: '神奈川県', year: '令和6年度(2024年)' }
+const AICHI_R7 = { region: '愛知県', year: '令和7年度(2025年)' }
+const AICHI_R6 = { region: '愛知県', year: '令和6年度(2024年)' }
+const AICHI_R5 = { region: '愛知県', year: '令和5年度(2023年)' }
+const LASALLE_JAN = { region: '函館ラ・サール高等学校', year: '令和2年度(2020年)1月実施' }
+const LASALLE_FEB = { region: '函館ラ・サール高等学校', year: '令和2年度(2020年)2月実施' }
 
 export const koukoNyushiRealQuestions: Question[] = [
   q(
@@ -120,5 +132,89 @@ export const koukoNyushiRealQuestions: Question[] = [
     "I can't go because I have many things to do on Saturday.",
     '整序作文(不定詞の形容詞的用法)',
     KANAGAWA_R8,
+  ),
+  q(
+    'kn-real-aichi-r7-1',
+    '生徒が借りた本の冊数は、夏休みと冬休みの前に増えました。',
+    'The number of books borrowed by students increased before summer vacation and winter vacation.',
+    '整序作文(過去分詞の後置修飾)',
+    AICHI_R7,
+  ),
+  q(
+    'kn-real-aichi-r6-1',
+    '部屋の掃除より買い物の方が一般的だと知って、私は少し驚いています。',
+    "I'm a little surprised to know that shopping is more common than cleaning the rooms.",
+    '整序作文(比較級+動名詞)',
+    AICHI_R6,
+  ),
+  q(
+    'kn-real-aichi-r5-1',
+    '次の日は忙しくなるので、雨が降り始める前の土曜日の朝に犬を散歩させるつもりです。',
+    "I'm going to walk our dog on Saturday morning before it starts to rain, because I'll be busy the next day.",
+    '整序作文(接続詞before)',
+    AICHI_R5,
+  ),
+  q(
+    'kn-real-lasalle-1',
+    'あの女性はなんて美しいバッグを持っているのでしょう。',
+    'What a beautiful bag that woman has!',
+    '整序作文(感嘆文 What)',
+    LASALLE_JAN,
+  ),
+  q(
+    'kn-real-lasalle-2',
+    '長い髪の女の子が向こうであなたを探しています。',
+    'A girl with long hair is looking for you over there.',
+    '整序作文(前置詞句の後置修飾)',
+    LASALLE_JAN,
+  ),
+  q(
+    'kn-real-lasalle-3',
+    '写真を見せてくれてありがとうございます。',
+    'Thank you for showing me those pictures.',
+    '整序作文(前置詞for+動名詞)',
+    LASALLE_JAN,
+  ),
+  q(
+    'kn-real-lasalle-4',
+    '台所に何か温かい食べ物はありますか？',
+    'Is there anything hot to eat in the kitchen?',
+    '整序作文(不定詞の形容詞的用法)',
+    LASALLE_JAN,
+  ),
+  q(
+    'kn-real-lasalle-5',
+    'ラグビーを見ることほどわくわくすることはありません。',
+    'Nothing is more exciting than watching rugby.',
+    '整序作文(比較級 nothing is more 〜 than)',
+    LASALLE_JAN,
+  ),
+  q(
+    'kn-real-lasalle-6',
+    '昨日はあまりに寒かったので、外出できませんでした。',
+    'It was too cold to go out yesterday.',
+    '整序作文(too 〜 to)',
+    LASALLE_FEB,
+  ),
+  q(
+    'kn-real-lasalle-7',
+    '彼が何冊の本を持っているか、私は知りません。',
+    "I don't know how many books he has.",
+    '整序作文(間接疑問文)',
+    LASALLE_FEB,
+  ),
+  q(
+    'kn-real-lasalle-8',
+    '東京で私が出会った少年は、中国出身でした。',
+    'The boy I met in Tokyo was from China.',
+    '整序作文(関係代名詞の省略)',
+    LASALLE_FEB,
+  ),
+  q(
+    'kn-real-lasalle-9',
+    '父が描いた絵は美しかったです。',
+    'The picture painted by my father was beautiful.',
+    '整序作文(過去分詞の後置修飾)',
+    LASALLE_FEB,
   ),
 ]
