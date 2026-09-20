@@ -32,12 +32,12 @@
   justify-content: center;
   background: radial-gradient(circle at 50% 0%, #4b32e0 0%, #180c4a 70%);
   overflow: hidden;
-  gap: 1.2vh;
+  gap: 1.2cqh;
   padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
 }
 
 .badge {
-  font-size: clamp(0.7rem, 1.8vh, 1rem);
+  font-size: clamp(0.7rem, 1.8cqh, 1rem);
   font-weight: 800;
   letter-spacing: 0.1em;
   opacity: 0.85;
@@ -45,7 +45,7 @@
 }
 
 .newBest {
-  padding: 0.4vh 1.6vh;
+  padding: 0.4cqh 1.6cqh;
   border-radius: 999px;
   background: var(--color-accent-yellow);
   color: #7a5200;
@@ -54,9 +54,9 @@
 
 .stars {
   display: flex;
-  gap: 1.6vh;
-  font-size: clamp(2rem, 7vh, 3.6rem);
-  margin: 0.4vh 0;
+  gap: 1.6cqh;
+  font-size: clamp(2rem, 7cqh, 3.6rem);
+  margin: 0.4cqh 0;
 }
 
 .star {
@@ -73,8 +73,8 @@
 
 .statsRow {
   display: flex;
-  gap: 3vh;
-  margin-top: 0.6vh;
+  gap: 3cqh;
+  margin-top: 0.6cqh;
 }
 
 .stat {
@@ -82,29 +82,29 @@
 }
 
 .statValue {
-  font-size: clamp(1.2rem, 3.6vh, 2rem);
+  font-size: clamp(1.2rem, 3.6cqh, 2rem);
   font-weight: 800;
   display: block;
 }
 
 .statLabel {
-  font-size: clamp(0.6rem, 1.4vh, 0.78rem);
+  font-size: clamp(0.6rem, 1.4cqh, 0.78rem);
   opacity: 0.75;
 }
 
 .achievementRow {
   display: flex;
   flex-direction: column;
-  gap: 0.8vh;
-  max-width: 60vh;
-  margin-top: 0.6vh;
+  gap: 0.8cqh;
+  max-width: 60cqh;
+  margin-top: 0.6cqh;
 }
 
 .achievementBadge {
   display: flex;
   align-items: center;
-  gap: 1vh;
-  padding: 0.8vh 1.6vh;
+  gap: 1cqh;
+  padding: 0.8cqh 1.6cqh;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 210, 63, 0.5);
@@ -112,7 +112,7 @@
 }
 
 .achievementIcon {
-  font-size: clamp(1.2rem, 3vh, 1.7rem);
+  font-size: clamp(1.2rem, 3cqh, 1.7rem);
   flex: 0 0 auto;
 }
 
@@ -123,25 +123,25 @@
 }
 
 .achievementTitle {
-  font-size: clamp(0.7rem, 1.7vh, 0.9rem);
+  font-size: clamp(0.7rem, 1.7cqh, 0.9rem);
   font-weight: 800;
   color: var(--color-accent-yellow);
 }
 
 .achievementDesc {
-  font-size: clamp(0.6rem, 1.3vh, 0.75rem);
+  font-size: clamp(0.6rem, 1.3cqh, 0.75rem);
   opacity: 0.8;
 }
 
 .buttonRow {
   display: flex;
-  gap: 2vh;
-  margin-top: 2vh;
+  gap: 2cqh;
+  margin-top: 2cqh;
 }
 
 .button {
-  padding: 1.4vh 3.6vh;
-  font-size: clamp(0.85rem, 2.2vh, 1.15rem);
+  padding: 1.4cqh 3.6cqh;
+  font-size: clamp(0.85rem, 2.2cqh, 1.15rem);
   font-weight: 800;
   border-radius: 999px;
   transition: transform 0.08s ease;

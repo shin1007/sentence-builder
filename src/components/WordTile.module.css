@@ -13,14 +13,14 @@
 }
 
 .tile {
-  min-height: 7.2vh;
+  min-height: 7.2cqh;
   min-width: 44px;
-  padding: 0.4vh 1.6vh;
+  padding: 0.4cqh 1.6cqh;
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(0.85rem, 2.4vh, 1.25rem);
+  font-size: clamp(0.85rem, 2.4cqh, 1.25rem);
   font-weight: 800;
   color: #2c1c9c;
   box-shadow: 0 5px 0 rgba(0, 0, 0, 0.2), 0 10px 16px rgba(0, 0, 0, 0.22);
@@ -69,7 +69,7 @@
 }
 
 .slot {
-  min-height: 7.2vh;
+  min-height: 7.2cqh;
   min-width: 44px;
   border-radius: 14px;
   border: 2px dashed rgba(255, 255, 255, 0.35);

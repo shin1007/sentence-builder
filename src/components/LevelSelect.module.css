@@ -31,9 +31,9 @@
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 75% 15%, #4b32e0 0%, #201261 60%);
-  padding: calc(2vh + var(--safe-top)) calc(3vh + var(--safe-right)) calc(2vh + var(--safe-bottom))
-    calc(3vh + var(--safe-left));
-  gap: 2vh;
+  padding: calc(2cqh + var(--safe-top)) calc(3cqh + var(--safe-right)) calc(2cqh + var(--safe-bottom))
+    calc(3cqh + var(--safe-left));
+  gap: 2cqh;
 }
 
 .header {
@@ -41,20 +41,20 @@
 }
 
 .heading {
-  font-size: clamp(1.1rem, 3.4vh, 1.8rem);
+  font-size: clamp(1.1rem, 3.4cqh, 1.8rem);
   font-weight: 800;
   margin: 0;
 }
 
 .sub {
-  font-size: clamp(0.65rem, 1.7vh, 0.9rem);
+  font-size: clamp(0.65rem, 1.7cqh, 0.9rem);
   opacity: 0.75;
-  margin: 0.4vh 0 0;
+  margin: 0.4cqh 0 0;
 }
 
 .cards {
   display: flex;
-  gap: 1.6vh;
+  gap: 1.6cqh;
   width: 100%;
   max-width: 1080px;
   justify-content: center;
@@ -64,11 +64,11 @@
   flex: 1;
   max-width: 230px;
   border-radius: 22px;
-  padding: 1.8vh 1.2vh;
+  padding: 1.8cqh 1.2cqh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6vh;
+  gap: 0.6cqh;
   color: #fff;
   box-shadow: 0 10px 0 rgba(0, 0, 0, 0.18), 0 18px 30px rgba(0, 0, 0, 0.3);
   transition: transform 0.14s ease;
@@ -80,13 +80,13 @@
 }
 
 .icon {
-  font-size: clamp(1.7rem, 5vh, 2.6rem);
+  font-size: clamp(1.7rem, 5cqh, 2.6rem);
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
   animation: float-y 3s ease-in-out infinite;
 }
 
 .cardTitle {
-  font-size: clamp(0.85rem, 2.3vh, 1.15rem);
+  font-size: clamp(0.85rem, 2.3cqh, 1.15rem);
   font-weight: 800;
   margin: 0;
 }
@@ -95,11 +95,11 @@
   font-size: 0.65rem;
   letter-spacing: 0.12em;
   opacity: 0.85;
-  margin: -0.4vh 0 0;
+  margin: -0.4cqh 0 0;
 }
 
 .cardDesc {
-  font-size: clamp(0.62rem, 1.5vh, 0.8rem);
+  font-size: clamp(0.62rem, 1.5cqh, 0.8rem);
   opacity: 0.9;
   text-align: center;
   margin: 0;
@@ -107,8 +107,8 @@
 
 .stars {
   display: flex;
-  gap: 0.3vh;
-  font-size: clamp(0.8rem, 2vh, 1.1rem);
+  gap: 0.3cqh;
+  font-size: clamp(0.8rem, 2cqh, 1.1rem);
   min-height: 1.4em;
 }
 
@@ -123,17 +123,17 @@
 
 .backButton {
   position: absolute;
-  top: 2vh;
-  left: 2vh;
-  width: 5.2vh;
-  height: 5.2vh;
+  top: 2cqh;
+  left: 2cqh;
+  width: 5.2cqh;
+  height: 5.2cqh;
   min-width: 38px;
   min-height: 38px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: #fff;
-  font-size: 2vh;
+  font-size: 2cqh;
   display: flex;
   align-items: center;
   justify-content: center;
