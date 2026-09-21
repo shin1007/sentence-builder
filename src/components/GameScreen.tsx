@@ -6,6 +6,7 @@ import { useSettingsContext } from '../context/SettingsContext'
 import { saveBestResultIfBetter } from '../utils/storage'
 import { loadDueIds, recordCorrect, recordMiss } from '../utils/reviewQueue'
 import { evaluateAchievements, type Achievement } from '../utils/achievements'
+import { recordFirstTry, recordRecovered, recordMissedOnly } from '../utils/progressStats'
 import { speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
@@ -13,7 +14,7 @@ import type { LevelId, LevelResult, Question } from '../types'
 import styles from './GameScreen.module.css'
 
 const QUESTIONS_PER_SESSION = 10
-const START_LIVES = 3
+const START_LIVES = 10
 const FEEDBACK_DELAY_CORRECT = 1100
 const FEEDBACK_DELAY_WRONG = 1500
 /** Grace window after the last tile lands before the answer is actually
@@ -97,6 +98,8 @@ export default function GameScreen({
   const advanceGeneration = useRef(0)
   const popIdRef = useRef(0)
   const pendingCheck = useRef<{ timerId: number; isCorrect: boolean } | null>(null)
+  /** Set of question IDs that were missed at least once in this session. */
+  const missedInSession = useRef<Set<string>>(new Set())
 
   // Freeze the countdown while the tab/app is backgrounded so returning
   // players don't find their time silently drained (or the round already
@@ -222,6 +225,12 @@ export default function GameScreen({
         setScorePop({ id: popIdRef.current++, value: gained })
         sound.correct()
         recordCorrect(levelId, question.id)
+        // Record progress: first-try or recovered
+        if (missedInSession.current.has(question.id)) {
+          recordRecovered()
+        } else {
+          recordFirstTry()
+        }
         if (nextCombo === 3 || (nextCombo >= 5 && nextCombo % 5 === 0)) {
           window.setTimeout(() => sound.combo(nextCombo >= 5 ? 2 : 1), 260)
         }
@@ -233,11 +242,18 @@ export default function GameScreen({
         setShake(true)
         sound.wrong()
         recordMiss(levelId, question.id)
+        // Mark this question as missed for the progress tracker
+        missedInSession.current.add(question.id)
         window.setTimeout(() => setShake(false), 450)
       }
 
       const isLastQuestion = qIndex + 1 >= questions.length
       const outOfLives = !practiceMode && nextLives <= 0
+      // A wrong answer on the final question (or when lives run out) can never
+      // be recovered in this session — count it as missed-only.
+      if (!isCorrect && (isLastQuestion || outOfLives)) {
+        recordMissedOnly()
+      }
       const generation = ++advanceGeneration.current
 
       // If the player backgrounds the app right after answering, don't let a
@@ -323,6 +339,7 @@ export default function GameScreen({
         sound.wrong()
         setCombo(0)
         recordMiss(levelId, question.id)
+        missedInSession.current.add(question.id)
         const nextLives = practiceMode ? lives : lives - 1
         setLives(nextLives)
         window.setTimeout(() => setErrorTileUid(null), 450)

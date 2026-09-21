@@ -7,10 +7,10 @@ import styles from './TitleScreen.module.css'
 
 export default function TitleScreen({
   onStart,
-  onAchievements,
+  onProgress,
 }: {
   onStart: () => void
-  onAchievements: () => void
+  onProgress: () => void
 }) {
   const sound = useSoundContext()
   const { retryOnMiss, practiceMode } = useSettingsContext()
@@ -81,10 +81,10 @@ export default function TitleScreen({
           className={`${styles.badge} ${styles.badgeButton}`}
           onClick={() => {
             sound.click()
-            onAchievements()
+            onProgress()
           }}
         >
-          🏆 実績
+          📈 成長記録
         </button>
       </div>
 

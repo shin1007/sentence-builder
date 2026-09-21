@@ -6,7 +6,7 @@ import TitleScreen from './components/TitleScreen'
 import LevelSelect from './components/LevelSelect'
 import GameScreen from './components/GameScreen'
 import ResultScreen from './components/ResultScreen'
-import AchievementsScreen from './components/AchievementsScreen'
+import ProgressScreen from './components/ProgressScreen'
 import type { LevelId, LevelResult } from './types'
 import type { Achievement } from './utils/achievements'
 import './styles/global.css'
@@ -21,7 +21,7 @@ type Screen =
       isNewBest: boolean
       newAchievements: Achievement[]
     }
-  | { name: 'achievements' }
+  | { name: 'progress' }
 
 function Shell() {
   const [screen, setScreen] = useState<Screen>({ name: 'title' })
@@ -30,7 +30,7 @@ function Shell() {
   const goTitle = useCallback(() => setScreen({ name: 'title' }), [])
   const goLevelSelect = useCallback(() => setScreen({ name: 'levelSelect' }), [])
   const goGame = useCallback((levelId: LevelId) => setScreen({ name: 'game', levelId }), [])
-  const goAchievements = useCallback(() => setScreen({ name: 'achievements' }), [])
+  const goProgress = useCallback(() => setScreen({ name: 'progress' }), [])
   const goResult = useCallback(
     (result: LevelResult, isNewBest: boolean, newAchievements: Achievement[]) =>
       setScreen({ name: 'result', result, isNewBest, newAchievements }),
@@ -44,7 +44,7 @@ function Shell() {
   return (
     <div className="app-canvas" onPointerDown={handleFirstPointer}>
       {screen.name === 'title' && (
-        <TitleScreen onStart={goLevelSelect} onAchievements={goAchievements} />
+        <TitleScreen onStart={goLevelSelect} onProgress={goProgress} />
       )}
       {screen.name === 'levelSelect' && <LevelSelect onSelect={goGame} onBack={goTitle} />}
       {screen.name === 'game' && (
@@ -59,7 +59,7 @@ function Shell() {
           onLevelSelect={goLevelSelect}
         />
       )}
-      {screen.name === 'achievements' && <AchievementsScreen onBack={goTitle} />}
+      {screen.name === 'progress' && <ProgressScreen onBack={goTitle} />}
     </div>
   )
 }
