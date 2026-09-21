@@ -1,0 +1,201 @@
+@keyframes modal-pop {
+  0% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: calc(1.5cqh + var(--safe-top)) calc(2cqh + var(--safe-right)) calc(1.5cqh + var(--safe-bottom))
+    calc(2cqh + var(--safe-left));
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90cqh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(ellipse at 50% 15%, rgba(255, 255, 255, 0.08) 0%, transparent 55%),
+    linear-gradient(145deg, #254a38 0%, #1a3527 60%, #13291d 100%);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 22px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55), inset 0 0 20px rgba(0, 0, 0, 0.35);
+  color: #fff;
+  animation: modal-pop 0.22s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.6cqh 2.4cqh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: clamp(1.1rem, 3.2cqh, 1.5rem);
+  font-weight: 800;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1cqh;
+}
+
+.closeButton {
+  background: rgba(10, 28, 18, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  color: #ffffff;
+  width: 5.6cqh;
+  height: 5.6cqh;
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease, background 0.1s ease;
+}
+
+.closeButton:active {
+  transform: scale(0.92);
+}
+
+.body {
+  padding: 2cqh 2.4cqh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2cqh;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1cqh;
+}
+
+.sectionLabel {
+  font-size: clamp(0.9rem, 2.3cqh, 1.15rem);
+  font-weight: 900;
+  color: #ffd23f;
+  display: flex;
+  align-items: center;
+  gap: 0.8cqh;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.optionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2cqh;
+}
+
+.optionCard {
+  background: rgba(10, 28, 18, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 14px;
+  padding: 1.2cqh 1.4cqh;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  color: #ffffff;
+  transition: all 0.12s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.optionCard:hover {
+  background: rgba(16, 42, 28, 0.95);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.optionCard.active {
+  background: rgba(255, 210, 63, 0.25);
+  border-color: #ffd23f;
+  box-shadow: 0 4px 16px rgba(255, 210, 63, 0.35);
+}
+
+.optionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 0.4cqh;
+}
+
+.optionTitle {
+  font-size: clamp(0.88rem, 2.3cqh, 1.15rem);
+  font-weight: 900;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 0.6cqh;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.optionBadge {
+  font-size: clamp(0.62rem, 1.5cqh, 0.78rem);
+  font-weight: 900;
+  background: #ffd23f;
+  color: #081a10;
+  padding: 0.2cqh 0.8cqh;
+  border-radius: 999px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.optionDesc {
+  font-size: clamp(0.72rem, 1.7cqh, 0.88rem);
+  color: #f1f5f9;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+  opacity: 0.95;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.footer {
+  padding: 1.4cqh 2.4cqh;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.doneButton {
+  width: 100%;
+  max-width: 240px;
+  padding: 1.2cqh 2cqh;
+  font-size: clamp(1rem, 2.5cqh, 1.25rem);
+  font-weight: 900;
+  background: var(--color-accent-yellow);
+  color: #081a10;
+  border-radius: 999px;
+  box-shadow: 0 5px 0 #b37d00, 0 10px 18px rgba(0, 0, 0, 0.4);
+  transition: transform 0.08s ease;
+}
+
+.doneButton:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #b37d00, 0 3px 8px rgba(0, 0, 0, 0.4);
+}

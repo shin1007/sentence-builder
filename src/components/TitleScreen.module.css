@@ -40,7 +40,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 25% 20%, #6f5bff 0%, #4b32e0 45%, #201261 100%);
+  background:
+    radial-gradient(ellipse at 50% 25%, rgba(255, 255, 255, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 80%, rgba(255, 255, 255, 0.04) 0%, transparent 45%),
+    radial-gradient(ellipse at 20% 70%, rgba(255, 255, 255, 0.04) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.45) 100%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.012) 0, rgba(255, 255, 255, 0.012) 2px, transparent 2px, transparent 6px),
+    linear-gradient(135deg, #244937 0%, #1c382b 50%, #142a20 100%);
   overflow: hidden;
   padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
 }
@@ -48,7 +54,7 @@
 .orb {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0));
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
   pointer-events: none;
 }
 
@@ -83,7 +89,7 @@
   justify-content: center;
   font-weight: 800;
   font-size: 5cqh;
-  color: #2c1c9c;
+  color: var(--color-ink);
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.18), 0 12px 20px rgba(0, 0, 0, 0.25);
   animation: pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both, float-y 2.6s ease-in-out infinite;
 }
@@ -126,18 +132,18 @@
   position: relative;
   padding: 2.2cqh 7.5cqh;
   font-size: clamp(1.3rem, 3.8cqh, 2rem);
-  font-weight: 800;
-  color: #2c1c9c;
+  font-weight: 900;
+  color: #081a10;
   background: var(--color-accent-yellow);
   border-radius: 999px;
-  box-shadow: 0 8px 0 #c9962b, 0 16px 26px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 0 #b37d00, 0 16px 26px rgba(0, 0, 0, 0.45);
   animation: pulse-warn 1.8s ease-in-out infinite;
   transition: transform 0.08s ease;
 }
 
 .startButton:active {
   transform: translateY(6px);
-  box-shadow: 0 2px 0 #c9962b, 0 6px 14px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 0 #b37d00, 0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
 .badgeRow {
@@ -145,22 +151,31 @@
   gap: 1.4cqh;
   margin-top: 3cqh;
   font-size: 0.9rem;
-  opacity: 0.75;
 }
 
 .badge {
   padding: 0.9cqh 1.9cqh;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(10, 28, 18, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.7);
   border-radius: 999px;
+  color: #ffffff;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .badgeButton {
-  color: inherit;
-  transition: transform 0.1s ease;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.1s ease;
+}
+
+.badgeButton:hover {
+  background: rgba(18, 48, 30, 0.95);
+  border-color: #ffffff;
 }
 
 .badgeButton:active {
-  transform: scale(0.92);
+  transform: scale(0.94);
 }
 
 .settingsRow {
@@ -177,13 +192,14 @@
   min-width: 50px;
   min-height: 50px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #fff;
+  background: rgba(10, 28, 18, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  color: #ffffff;
   font-size: 2.9cqh;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   transition: transform 0.12s ease, background 0.12s ease;
 }
 
@@ -192,11 +208,37 @@
 }
 
 .iconButton.off {
-  opacity: 0.45;
+  opacity: 0.55;
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .iconButton.textIcon {
   font-size: 2cqh;
   font-weight: 800;
   letter-spacing: -0.02em;
+}
+
+.settingsButton {
+  display: flex;
+  align-items: center;
+  gap: 0.8cqh;
+  padding: 0.8cqh 2.2cqh;
+  height: 6.8cqh;
+  min-height: 48px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid #ffffff;
+  color: #081a10;
+  font-size: clamp(0.9rem, 2.3cqh, 1.15rem);
+  font-weight: 900;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.settingsButton:hover {
+  background: #f1f5f9;
+}
+
+.settingsButton:active {
+  transform: scale(0.94);
 }

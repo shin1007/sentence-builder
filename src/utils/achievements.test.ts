@@ -104,22 +104,4 @@ describe('achievements', () => {
     const ids = ACHIEVEMENTS.map((a) => a.id)
     expect(new Set(ids).size).toBe(ids.length)
   })
-
-  it('unlocks daily-streak-3 and daily-streak-7 at their thresholds but not before', () => {
-    const notYet = evaluateAchievements(makeResult(), 2)
-    expect(notYet.map((a) => a.id)).not.toContain('daily-streak-3')
-
-    const three = evaluateAchievements(makeResult(), 3)
-    expect(three.map((a) => a.id)).toContain('daily-streak-3')
-    expect(three.map((a) => a.id)).not.toContain('daily-streak-7')
-
-    const seven = evaluateAchievements(makeResult(), 7)
-    expect(seven.map((a) => a.id)).toContain('daily-streak-7')
-  })
-
-  it('does not unlock any daily-streak achievement without a streak argument', () => {
-    const newly = evaluateAchievements(makeResult())
-    expect(newly.map((a) => a.id)).not.toContain('daily-streak-3')
-    expect(newly.map((a) => a.id)).not.toContain('daily-streak-7')
-  })
 })

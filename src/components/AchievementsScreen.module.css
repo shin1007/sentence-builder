@@ -6,7 +6,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 75% 15%, #4b32e0 0%, #201261 60%);
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 15% 75%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.45) 100%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.012) 0, rgba(255, 255, 255, 0.012) 2px, transparent 2px, transparent 6px),
+    linear-gradient(135deg, #244937 0%, #1c382b 50%, #142a20 100%);
   padding: 2cqh 3cqh;
   gap: 2cqh;
   overflow-y: auto;
@@ -44,17 +50,21 @@
   min-width: 220px;
   padding: 1.2cqh 1.6cqh;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(10, 28, 18, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .card.unlocked {
-  border-color: rgba(255, 210, 63, 0.5);
-  background: rgba(255, 255, 255, 0.14);
+  border-color: #ffd23f;
+  background: rgba(255, 210, 63, 0.22);
+  box-shadow: 0 4px 14px rgba(255, 210, 63, 0.25);
 }
 
 .card.locked {
-  opacity: 0.55;
+  opacity: 0.6;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .icon {
@@ -67,15 +77,24 @@
 }
 
 .title {
-  font-size: clamp(0.78rem, 1.9cqh, 1rem);
-  font-weight: 800;
+  font-size: clamp(0.82rem, 2cqh, 1.05rem);
+  font-weight: 900;
+  color: #ffffff;
   margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.card.unlocked .title {
+  color: #ffd23f;
 }
 
 .desc {
-  font-size: clamp(0.62rem, 1.4cqh, 0.78rem);
-  opacity: 0.8;
+  font-size: clamp(0.65rem, 1.5cqh, 0.82rem);
+  color: #f1f5f9;
+  font-weight: 600;
+  opacity: 0.95;
   margin: 0.2cqh 0 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 .backButton {
@@ -87,13 +106,16 @@
   min-width: 38px;
   min-height: 38px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #fff;
+  background: rgba(10, 28, 18, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  color: #ffffff;
   font-size: 2cqh;
+  font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease;
 }
 
 .backButton:active {

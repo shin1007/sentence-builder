@@ -14,6 +14,7 @@ export function WordTile({
   onClick,
   disabled,
   placed,
+  error,
 }: {
   word: string
   displayWord?: string
@@ -24,11 +25,14 @@ export function WordTile({
    * reserved (so the other tiles don't jump into the gap) but hides it,
    * since its word is now shown in the answer row instead. */
   placed?: boolean
+  /** Temporarily marks this tray tile as incorrect (shakes with red border)
+   * on tap when the wrong word order is chosen. */
+  error?: boolean
 }) {
   const shown = displayWord ?? word
   return (
     <button
-      className={`${styles.tile} ${COLOR_CLASSES[colorIndex % COLOR_CLASSES.length]} ${placed ? styles.placed : ''}`}
+      className={`${styles.tile} ${COLOR_CLASSES[colorIndex % COLOR_CLASSES.length]} ${placed ? styles.placed : ''} ${error ? styles.error : ''}`}
       style={{ minWidth: estimateTileWidth(word) }}
       onClick={onClick}
       disabled={disabled}

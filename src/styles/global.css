@@ -1,15 +1,15 @@
 :root {
-  --color-bg-1: #2c1c9c;
-  --color-bg-2: #4b32e0;
-  --color-bg-3: #6f5bff;
+  --color-bg-1: #1a3526;
+  --color-bg-2: #234633;
+  --color-bg-3: #2d5840;
   --color-accent-yellow: #ffd23f;
   --color-accent-teal: #5be0c0;
   --color-accent-pink: #ff5f9e;
   --color-accent-orange: #ff8a3d;
   --color-white: #ffffff;
-  --color-ink: #2c1c9c;
-  --color-success: #33d17a;
-  --color-danger: #ff4f6d;
+  --color-ink: #081a10;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
   --font-family: 'Hiragino Maru Gothic ProN', 'Rounded Mplus 1c', 'Yu Gothic', 'Segoe UI',
     system-ui, sans-serif;
   --app-vw: 100vw;

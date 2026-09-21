@@ -4,21 +4,18 @@ import { getLevel } from '../data/levels'
 import Confetti from './Confetti'
 import type { LevelResult } from '../types'
 import type { Achievement } from '../utils/achievements'
-import type { DailyStatus } from '../utils/dailyChallenge'
 import styles from './ResultScreen.module.css'
 
 export default function ResultScreen({
   result,
   isNewBest,
   newAchievements,
-  dailyStatus,
   onRetry,
   onLevelSelect,
 }: {
   result: LevelResult
   isNewBest: boolean
   newAchievements: Achievement[]
-  dailyStatus?: DailyStatus
   onRetry: () => void
   onLevelSelect: () => void
 }) {
@@ -43,9 +40,6 @@ export default function ResultScreen({
         {level.icon} {level.title} クリア！
       </p>
       {showNewBest && <p className={styles.newBest}>🏆 New Best!</p>}
-      {dailyStatus && (
-        <p className={styles.newBest}>📅 デイリーチャレンジ {dailyStatus.streak}日連続クリア！</p>
-      )}
 
       <div className={styles.stars}>
         {[1, 2, 3].map((n) => (

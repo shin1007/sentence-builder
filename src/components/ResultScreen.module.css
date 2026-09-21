@@ -30,7 +30,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 50% 0%, #4b32e0 0%, #180c4a 70%);
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 15% 75%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.45) 100%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.012) 0, rgba(255, 255, 255, 0.012) 2px, transparent 2px, transparent 6px),
+    linear-gradient(135deg, #244937 0%, #1c382b 50%, #142a20 100%);
   overflow: hidden;
   gap: 1.2cqh;
   padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
@@ -48,7 +54,8 @@
   padding: 0.4cqh 1.6cqh;
   border-radius: 999px;
   background: var(--color-accent-yellow);
-  color: #7a5200;
+  color: #081a10;
+  font-weight: 900;
   animation: pulse-warn 1s ease-in-out infinite, pop-in 0.4s ease both;
 }
 
@@ -152,13 +159,16 @@
 }
 
 .primary {
-  color: #2c1c9c;
+  color: #081a10;
+  font-weight: 900;
   background: var(--color-accent-yellow);
-  box-shadow: 0 6px 0 #c9962b, 0 12px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 0 #b37d00, 0 12px 20px rgba(0, 0, 0, 0.4);
 }
 
 .secondary {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  background: rgba(10, 28, 18, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  font-weight: 800;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }

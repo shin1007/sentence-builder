@@ -6,7 +6,6 @@ import { useSettingsContext } from '../context/SettingsContext'
 import { saveBestResultIfBetter } from '../utils/storage'
 import { loadDueIds, recordCorrect, recordMiss } from '../utils/reviewQueue'
 import { evaluateAchievements, type Achievement } from '../utils/achievements'
-import { recordDailyClear, type DailyStatus } from '../utils/dailyChallenge'
 import { speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
@@ -50,33 +49,23 @@ function displayFor(tile: Tile, capitalizeFirst: boolean): string {
 
 export default function GameScreen({
   levelId,
-  dailyQuestions,
   onFinish,
   onExit,
 }: {
   levelId: LevelId
-  /** When set, plays this fixed question set instead of a fresh random pick
-   * — used for the daily challenge, whose set is the same for every player
-   * on a given day. Scores/misses still feed `levelId`'s normal storage. */
-  dailyQuestions?: Question[]
   onFinish: (
     result: LevelResult,
     isNewBest: boolean,
     newAchievements: Achievement[],
-    dailyStatus?: DailyStatus,
   ) => void
   onExit: () => void
 }) {
   const level = getLevel(levelId)!
   const sound = useSoundContext()
-  const { capitalizeFirst, practiceMode } = useSettingsContext()
-  const isDaily = dailyQuestions !== undefined
+  const { capitalizeFirst, practiceMode, retryOnMiss } = useSettingsContext()
 
   const questions = useMemo(
-    () => dailyQuestions ?? pickQuestions(levelId, QUESTIONS_PER_SESSION, loadDueIds(levelId)),
-    // dailyQuestions is fixed for the lifetime of a daily-challenge screen —
-    // only levelId should ever trigger picking a fresh set.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    () => pickQuestions(levelId, QUESTIONS_PER_SESSION, loadDueIds(levelId)),
     [levelId],
   )
   const [qIndex, setQIndex] = useState(0)
@@ -97,8 +86,9 @@ export default function GameScreen({
   const [timeLeft, setTimeLeft] = useState(level.timeLimitSec)
   const [scorePop, setScorePop] = useState<{ id: number; value: number } | null>(null)
   const [shake, setShake] = useState(false)
+  const [errorTileUid, setErrorTileUid] = useState<number | null>(null)
   // True for the brief window after the last tile lands but before it's
-  // actually scored — see CONFIRM_GRACE_MS.
+  // actually scored in advance mode.
   const [awaitingConfirm, setAwaitingConfirm] = useState(false)
 
   const lastTickSecond = useRef(-1)
@@ -196,13 +186,12 @@ export default function GameScreen({
       // comparison against timed runs and shouldn't overwrite a real best —
       // and shouldn't count toward the daily streak either.
       const isNewBest = practiceMode ? false : saveBestResultIfBetter(result)
-      const dailyStatus = isDaily && !practiceMode ? recordDailyClear() : undefined
-      const newAchievements = evaluateAchievements(result, dailyStatus?.streak)
+      const newAchievements = evaluateAchievements(result)
       if (stars >= 2) sound.win()
       else sound.lose()
-      onFinish(result, isNewBest, newAchievements, dailyStatus)
+      onFinish(result, isNewBest, newAchievements)
     },
-    [levelId, onFinish, sound, practiceMode, isDaily],
+    [levelId, onFinish, sound, practiceMode],
   )
 
   const resolve = useCallback(
@@ -325,24 +314,53 @@ export default function GameScreen({
     const emptyIndex = slots.findIndex((s) => s === null)
     if (emptyIndex === -1) return
 
-    const nextSlots = [...slots]
-    nextSlots[emptyIndex] = tile
-    setSlots(nextSlots)
-    sound.place()
+    if (retryOnMiss) {
+      // 即時判定モード: タップした単語がこのスロットの正解と一致するか判定
+      const expectedWord = question.words[emptyIndex]
+      if (tile.word !== expectedWord) {
+        // 間違えた単語をタップした瞬間に赤枠＆シェイクで通知！
+        setErrorTileUid(tile.uid)
+        sound.wrong()
+        setCombo(0)
+        recordMiss(levelId, question.id)
+        const nextLives = practiceMode ? lives : lives - 1
+        setLives(nextLives)
+        window.setTimeout(() => setErrorTileUid(null), 450)
 
-    if (nextSlots.every((s) => s !== null)) {
-      const built = nextSlots.map((s) => (s as Tile).word).join(' ')
-      const isCorrect = built === question.words.join(' ')
-      // Don't score the instant the board fills — give the player a brief
-      // window (CONFIRM_GRACE_MS) to notice a misplaced tile and tap it back
-      // to the tray before this answer locks in. See handleSlotTap.
-      setAwaitingConfirm(true)
-      const timerId = window.setTimeout(() => {
-        pendingCheck.current = null
-        setAwaitingConfirm(false)
-        resolve(isCorrect)
-      }, CONFIRM_GRACE_MS)
-      pendingCheck.current = { timerId, isCorrect }
+        if (!practiceMode && nextLives <= 0) {
+          finishSession(score, correctCount, bestCombo)
+        }
+        return
+      }
+
+      // 正しい単語の場合: スロットに配置
+      const nextSlots = [...slots]
+      nextSlots[emptyIndex] = tile
+      setSlots(nextSlots)
+      sound.place()
+
+      // すべての単語が正しく埋まったら正解処理
+      if (nextSlots.every((s) => s !== null)) {
+        resolve(true)
+      }
+    } else {
+      // 一発勝負モード: 自由に並べてから一括判定
+      const nextSlots = [...slots]
+      nextSlots[emptyIndex] = tile
+      setSlots(nextSlots)
+      sound.place()
+
+      if (nextSlots.every((s) => s !== null)) {
+        const built = nextSlots.map((s) => (s as Tile).word).join(' ')
+        const isCorrect = built === question.words.join(' ')
+        setAwaitingConfirm(true)
+        const timerId = window.setTimeout(() => {
+          pendingCheck.current = null
+          setAwaitingConfirm(false)
+          resolve(isCorrect)
+        }, CONFIRM_GRACE_MS)
+        pendingCheck.current = { timerId, isCorrect }
+      }
     }
   }
 
@@ -379,7 +397,7 @@ export default function GameScreen({
             ←
           </button>
           <span className={styles.levelTag}>
-            {isDaily ? '📅 デイリーチャレンジ' : `${level.icon} ${level.title}`}
+            {`${level.icon} ${level.title}`}
             {practiceMode && ` 🧪`}
           </span>
           <span className={styles.progress}>
@@ -480,6 +498,7 @@ export default function GameScreen({
                   onClick={() => handleTrayTap(tile)}
                   disabled={status !== 'playing' || placed}
                   placed={placed}
+                  error={errorTileUid === tile.uid}
                 />
               )
             })}

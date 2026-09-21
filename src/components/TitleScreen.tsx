@@ -1,34 +1,26 @@
+import { useState } from 'react'
 import { requestFullscreenLandscape } from '../hooks/useForcedLandscape'
 import { useSoundContext } from '../context/SoundContext'
 import { useSettingsContext } from '../context/SettingsContext'
-import { getDailyStatus } from '../utils/dailyChallenge'
+import SettingsModal from './SettingsModal'
 import styles from './TitleScreen.module.css'
 
 export default function TitleScreen({
   onStart,
-  onDaily,
   onAchievements,
 }: {
   onStart: () => void
-  onDaily: () => void
   onAchievements: () => void
 }) {
   const sound = useSoundContext()
-  const { capitalizeFirst, toggleCapitalizeFirst, practiceMode, togglePracticeMode } = useSettingsContext()
-  const dailyStatus = getDailyStatus()
+  const { retryOnMiss, practiceMode } = useSettingsContext()
+  const [showSettings, setShowSettings] = useState(false)
 
   const handleStart = () => {
     sound.unlock()
     sound.click()
     void requestFullscreenLandscape()
     onStart()
-  }
-
-  const handleDaily = () => {
-    sound.unlock()
-    sound.click()
-    void requestFullscreenLandscape()
-    onDaily()
   }
 
   return (
@@ -44,24 +36,19 @@ export default function TitleScreen({
             sound.toggleSfx()
           }}
           aria-label="効果音の切り替え"
+          title={sound.sfxOn ? '音声: ON' : '音声: OFF'}
         >
           {sound.sfxOn ? '🔊' : '🔈'}
         </button>
         <button
-          className={`${styles.iconButton} ${styles.textIcon} ${capitalizeFirst ? '' : styles.off}`}
-          onClick={toggleCapitalizeFirst}
-          aria-label="文頭を大文字にするかの切り替え"
-          title="文頭を大文字にするか"
+          className={styles.settingsButton}
+          onClick={() => {
+            sound.click()
+            setShowSettings(true)
+          }}
+          aria-label="ゲーム設定を開く"
         >
-          {capitalizeFirst ? 'Aa' : 'aa'}
-        </button>
-        <button
-          className={`${styles.iconButton} ${practiceMode ? '' : styles.off}`}
-          onClick={togglePracticeMode}
-          aria-label="れんしゅうモード（タイマー・ハートなし）の切り替え"
-          title="れんしゅうモード（タイマー・ハートなし）"
-        >
-          🧪
+          ⚙️ 設定
         </button>
       </div>
 
@@ -79,12 +66,16 @@ export default function TitleScreen({
       </button>
 
       <div className={styles.badgeRow}>
-        <span className={styles.badge}>📱 横画面プレイ</span>
-        <span className={styles.badge}>📡 オフライン対応</span>
-        <button className={`${styles.badge} ${styles.badgeButton}`} onClick={handleDaily}>
-          📅 デイリー
-          {dailyStatus.streak > 0 && ` 🔥${dailyStatus.streak}`}
-          {dailyStatus.clearedToday && ' ✓'}
+        <button
+          className={`${styles.badge} ${styles.badgeButton}`}
+          onClick={() => {
+            sound.click()
+            setShowSettings(true)
+          }}
+          title="クリックして設定を変更"
+        >
+          {retryOnMiss ? '🔄 やり直しモード' : '⏩ 一発勝負モード'}
+          {practiceMode && '・れんしゅう'}
         </button>
         <button
           className={`${styles.badge} ${styles.badgeButton}`}
@@ -96,6 +87,8 @@ export default function TitleScreen({
           🏆 実績
         </button>
       </div>
+
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   )
 }
