@@ -129,22 +129,62 @@
   text-align: center;
 }
 
+.modeRow {
+  display: flex;
+  gap: 3cqh;
+  align-items: stretch;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .startButton {
   position: relative;
-  padding: 2.2cqh 7.5cqh;
-  font-size: clamp(1.3rem, 3.8cqh, 2rem);
-  font-weight: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4cqh;
+  padding: 1.8cqh 5cqh;
   color: #081a10;
-  background: var(--color-accent-yellow);
   border-radius: 999px;
-  box-shadow: 0 8px 0 #b37d00, 0 16px 26px rgba(0, 0, 0, 0.45);
-  animation: pulse-warn 1.8s ease-in-out infinite;
   transition: transform 0.08s ease;
 }
 
-.startButton:active {
+.modeTitle {
+  font-size: clamp(1.05rem, 3.2cqh, 1.7rem);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.modeHint {
+  font-size: clamp(0.62rem, 1.7cqh, 0.85rem);
+  font-weight: 700;
+  opacity: 0.72;
+  white-space: nowrap;
+}
+
+/* The 10-question run stays the headline action: the yellow pill that used
+   to be the single 始める button, pulse and all. */
+.challenge {
+  background: var(--color-accent-yellow);
+  box-shadow: 0 8px 0 #b37d00, 0 16px 26px rgba(0, 0, 0, 0.45);
+  animation: pulse-warn 1.8s ease-in-out infinite;
+}
+
+.challenge:active {
   transform: translateY(6px);
   box-shadow: 0 2px 0 #b37d00, 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* Endless is the calmer sibling — same size, teal instead of yellow, and no
+   pulse, so the two buttons don't fight each other for attention. */
+.endless {
+  background: var(--color-accent-teal);
+  box-shadow: 0 8px 0 #0f6b5c, 0 16px 26px rgba(0, 0, 0, 0.45);
+}
+
+.endless:active {
+  transform: translateY(6px);
+  box-shadow: 0 2px 0 #0f6b5c, 0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
 .badgeRow {

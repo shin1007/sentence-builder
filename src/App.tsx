@@ -7,14 +7,14 @@ import LevelSelect from './components/LevelSelect'
 import GameScreen from './components/GameScreen'
 import ResultScreen from './components/ResultScreen'
 import ProgressScreen from './components/ProgressScreen'
-import type { LevelId, LevelResult } from './types'
+import type { GameMode, LevelId, LevelResult } from './types'
 import type { Achievement } from './utils/achievements'
 import './styles/global.css'
 
 type Screen =
   | { name: 'title' }
-  | { name: 'levelSelect' }
-  | { name: 'game'; levelId: LevelId }
+  | { name: 'levelSelect'; mode: GameMode }
+  | { name: 'game'; levelId: LevelId; mode: GameMode }
   | {
       name: 'result'
       result: LevelResult
@@ -28,8 +28,14 @@ function Shell() {
   const sound = useSoundContext()
 
   const goTitle = useCallback(() => setScreen({ name: 'title' }), [])
-  const goLevelSelect = useCallback(() => setScreen({ name: 'levelSelect' }), [])
-  const goGame = useCallback((levelId: LevelId) => setScreen({ name: 'game', levelId }), [])
+  const goLevelSelect = useCallback(
+    (mode: GameMode) => setScreen({ name: 'levelSelect', mode }),
+    [],
+  )
+  const goGame = useCallback(
+    (levelId: LevelId, mode: GameMode) => setScreen({ name: 'game', levelId, mode }),
+    [],
+  )
   const goProgress = useCallback(() => setScreen({ name: 'progress' }), [])
   const goResult = useCallback(
     (result: LevelResult, isNewBest: boolean, newAchievements: Achievement[]) =>
@@ -46,17 +52,28 @@ function Shell() {
       {screen.name === 'title' && (
         <TitleScreen onStart={goLevelSelect} onProgress={goProgress} />
       )}
-      {screen.name === 'levelSelect' && <LevelSelect onSelect={goGame} onBack={goTitle} />}
+      {screen.name === 'levelSelect' && (
+        <LevelSelect
+          mode={screen.mode}
+          onSelect={(levelId) => goGame(levelId, screen.mode)}
+          onBack={goTitle}
+        />
+      )}
       {screen.name === 'game' && (
-        <GameScreen levelId={screen.levelId} onFinish={goResult} onExit={goLevelSelect} />
+        <GameScreen
+          levelId={screen.levelId}
+          mode={screen.mode}
+          onFinish={goResult}
+          onExit={() => goLevelSelect(screen.mode)}
+        />
       )}
       {screen.name === 'result' && (
         <ResultScreen
           result={screen.result}
           isNewBest={screen.isNewBest}
           newAchievements={screen.newAchievements}
-          onRetry={() => goGame(screen.result.levelId)}
-          onLevelSelect={goLevelSelect}
+          onRetry={() => goGame(screen.result.levelId, screen.result.mode ?? 'challenge')}
+          onLevelSelect={() => goLevelSelect(screen.result.mode ?? 'challenge')}
         />
       )}
       {screen.name === 'progress' && <ProgressScreen onBack={goTitle} />}

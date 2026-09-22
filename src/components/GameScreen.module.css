@@ -88,6 +88,31 @@
   flex: 0 0 auto;
 }
 
+/* Endless has no natural end, so its exit is a labelled やめる pill rather
+   than the bare ← arrow — stopping is a normal way to finish the run. */
+.quitButton {
+  height: 4.6cqh;
+  min-height: 34px;
+  padding: 0 1.6cqh;
+  border-radius: 999px;
+  background: rgba(10, 28, 18, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  color: #ffffff;
+  font-size: 1.7cqh;
+  font-weight: 900;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease;
+}
+
+.quitButton:active {
+  transform: scale(0.94);
+}
+
 .backButton {
   width: 4.6cqh;
   height: 4.6cqh;

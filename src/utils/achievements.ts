@@ -1,5 +1,6 @@
 import { LEVELS } from '../data/levels'
 import { loadBestResult } from './storage'
+import { MIN_RANKED_QUESTIONS } from './scoring'
 import type { LevelResult } from '../types'
 
 export interface Achievement {
@@ -11,7 +12,7 @@ export interface Achievement {
 
 export const ACHIEVEMENTS: Achievement[] = [
   { id: 'first-clear', title: 'はじめの一歩', description: 'はじめてレベルをクリアした', icon: '🎉' },
-  { id: 'perfect', title: 'パーフェクト', description: '10問すべて正解でクリアした', icon: '💯' },
+  { id: 'perfect', title: 'パーフェクト', description: '10問以上を1問も間違えずにクリアした', icon: '💯' },
   { id: 'combo-master', title: 'コンボマスター', description: '1回のプレイで8コンボ以上をつなげた', icon: '🔥' },
   { id: 'three-stars', title: '三ツ星', description: 'いずれかのレベルで星3つを獲得した', icon: '⭐' },
   { id: 'all-clear', title: '全制覇', description: 'すべてのレベルを一度はクリアした', icon: '🏆' },
@@ -66,7 +67,11 @@ export function evaluateAchievements(result: LevelResult): Achievement[] {
   }
 
   unlock('first-clear')
-  if (result.correctCount === result.totalCount) unlock('perfect')
+  // Guarded by the ranked minimum so quitting an endless run one question in
+  // can't hand out a perfect score.
+  if (result.totalCount >= MIN_RANKED_QUESTIONS && result.correctCount === result.totalCount) {
+    unlock('perfect')
+  }
   if (result.bestCombo >= 8) unlock('combo-master')
   if (result.stars === 3) unlock('three-stars')
   if (LEVELS.every((level) => loadBestResult(level.id) !== null)) unlock('all-clear')
