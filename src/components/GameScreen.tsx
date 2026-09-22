@@ -5,7 +5,6 @@ import { useSoundContext } from '../context/SoundContext'
 import { useSettingsContext } from '../context/SettingsContext'
 import { saveBestResultIfBetter } from '../utils/storage'
 import { loadDueIds, recordCorrect, recordMiss } from '../utils/reviewQueue'
-import { evaluateAchievements, type Achievement } from '../utils/achievements'
 import { recordFirstTry, recordRecovered, recordMissedOnly } from '../utils/progressStats'
 import { speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
@@ -61,11 +60,7 @@ export default function GameScreen({
 }: {
   levelId: LevelId
   mode: GameMode
-  onFinish: (
-    result: LevelResult,
-    isNewBest: boolean,
-    newAchievements: Achievement[],
-  ) => void
+  onFinish: (result: LevelResult, isNewBest: boolean) => void
   onExit: () => void
 }) {
   const level = getLevel(levelId)!
@@ -220,10 +215,9 @@ export default function GameScreen({
       // comparison against timed runs and shouldn't overwrite a real best —
       // and shouldn't count toward the daily streak either.
       const isNewBest = practiceMode ? false : saveBestResultIfBetter(result)
-      const newAchievements = evaluateAchievements(result)
       if (stars >= 2) sound.win()
       else sound.lose()
-      onFinish(result, isNewBest, newAchievements)
+      onFinish(result, isNewBest)
     },
     [levelId, mode, isEndless, onFinish, sound, practiceMode],
   )

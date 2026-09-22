@@ -8,19 +8,13 @@ import GameScreen from './components/GameScreen'
 import ResultScreen from './components/ResultScreen'
 import ProgressScreen from './components/ProgressScreen'
 import type { GameMode, LevelId, LevelResult } from './types'
-import type { Achievement } from './utils/achievements'
 import './styles/global.css'
 
 type Screen =
   | { name: 'title' }
   | { name: 'levelSelect'; mode: GameMode }
   | { name: 'game'; levelId: LevelId; mode: GameMode }
-  | {
-      name: 'result'
-      result: LevelResult
-      isNewBest: boolean
-      newAchievements: Achievement[]
-    }
+  | { name: 'result'; result: LevelResult; isNewBest: boolean }
   | { name: 'progress' }
 
 function Shell() {
@@ -38,8 +32,8 @@ function Shell() {
   )
   const goProgress = useCallback(() => setScreen({ name: 'progress' }), [])
   const goResult = useCallback(
-    (result: LevelResult, isNewBest: boolean, newAchievements: Achievement[]) =>
-      setScreen({ name: 'result', result, isNewBest, newAchievements }),
+    (result: LevelResult, isNewBest: boolean) =>
+      setScreen({ name: 'result', result, isNewBest }),
     [],
   )
 
@@ -71,7 +65,6 @@ function Shell() {
         <ResultScreen
           result={screen.result}
           isNewBest={screen.isNewBest}
-          newAchievements={screen.newAchievements}
           onRetry={() => goGame(screen.result.levelId, screen.result.mode ?? 'challenge')}
           onLevelSelect={() => goLevelSelect(screen.result.mode ?? 'challenge')}
         />

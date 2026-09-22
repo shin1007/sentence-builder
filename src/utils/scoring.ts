@@ -6,8 +6,8 @@ export const QUESTIONS_PER_SESSION = 10
  *
  * Endless runs end whenever the player taps やめる, and both modes share one
  * best-score record per level. Without a floor, quitting an endless run after
- * a single correct answer would be 100% accuracy — an instant ★3 (and the
- * パーフェクト achievement) that a real 10-question run has to work for.
+ * a single correct answer would be 100% accuracy — an instant ★3 that a real
+ * 10-question run has to work for.
  */
 export const MIN_RANKED_QUESTIONS = QUESTIONS_PER_SESSION
 
