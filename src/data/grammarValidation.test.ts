@@ -36,6 +36,32 @@ describe('validateQuestion', () => {
     )
   })
 
+  it('flags a subject that does not agree with its verb', () => {
+    expect(validateQuestion(q('bad', 'jp', "She don't like carrots."))).toContain(
+      'subject and verb do not agree: "She don\'t"',
+    )
+  })
+
+  it('accepts "were" with a singular subject, which the subjunctive needs', () => {
+    expect(validateQuestion(q('ok', 'jp', 'If I were you, I would go.'))).toEqual([])
+    expect(validateQuestion(q('ok', 'jp', 'He talks as if he were my teacher.'))).toEqual([])
+  })
+
+  it('flags the wrong article before a vowel sound', () => {
+    expect(validateQuestion(q('bad', 'jp', 'She has a interesting book.'))).toContain(
+      'should be "an" before "interesting": "a interesting"',
+    )
+    expect(validateQuestion(q('bad', 'jp', 'He found an old an letter.'))).toContain(
+      'should be "a" before "letter": "an letter"',
+    )
+  })
+
+  it('accepts articles that follow sound rather than spelling', () => {
+    expect(validateQuestion(q('ok', 'jp', 'He is a university student.'))).toEqual([])
+    expect(validateQuestion(q('ok', 'jp', 'We waited for an hour.'))).toEqual([])
+    expect(validateQuestion(q('ok', 'jp', 'He is an honest boy.'))).toEqual([])
+  })
+
   it('flags a sentence with fewer than two words', () => {
     expect(validateQuestion(q('bad', 'jp', 'Hi.'))).toEqual(['sentence is too short (1 word)'])
   })
@@ -46,6 +72,21 @@ describe('question bank grammar sanity', () => {
   for (const levelId of LEVEL_IDS) {
     it(`${levelId}: every question passes structural sanity checks`, () => {
       expect(validateQuestionBank(QUESTIONS[levelId])).toEqual([])
+    })
+
+    it(`${levelId}: serves no sentence twice`, () => {
+      // Hand-written banks are added a template at a time, so the same useful
+      // sentence can easily be typed into two of them. A duplicate isn't
+      // broken, but it wastes a slot and makes a session feel repetitive.
+      const seen = new Map<string, string>()
+      const duplicates: string[] = []
+      for (const question of QUESTIONS[levelId]) {
+        const sentence = question.words.join(' ')
+        const first = seen.get(sentence)
+        if (first) duplicates.push(`${question.id} repeats ${first}: "${sentence}"`)
+        else seen.set(sentence, question.id)
+      }
+      expect(duplicates).toEqual([])
     })
   }
 })

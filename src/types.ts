@@ -1,3 +1,5 @@
+import type { GrammarId } from './data/grammar'
+
 export type LevelId = 'eiken4' | 'eiken3' | 'eikenPre2' | 'eiken2' | 'koukoNyushi'
 
 /**
@@ -25,6 +27,14 @@ export interface Question {
   words: string[]
   /** Short grammar note shown after answering, for learning reinforcement. */
   note?: string
+  /**
+   * Normalized grammar point this question drills, derived from `note` when
+   * the bank is built (see data/grammar.ts). Unlike `note` — which is written
+   * per template for display and varies in wording — this is stable enough to
+   * aggregate on, so review can target a grammar point rather than one
+   * sentence. Absent only if a note has no mapping yet.
+   */
+  grammar?: GrammarId
   /** Present only for questions adapted from a real past exam. */
   source?: QuestionSource
 }
@@ -36,7 +46,12 @@ export interface LevelInfo {
   description: string
   gradient: [string, string]
   accent: string
-  timeLimitSec: number
+  /**
+   * Seconds of thinking time granted per word of the answer, on top of
+   * BASE_TIME_SEC. This is the level’s difficulty dial — see
+   * data/timeLimit.ts for why the limit is derived rather than fixed.
+   */
+  secPerWord: number
   icon: string
 }
 

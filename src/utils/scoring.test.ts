@@ -4,6 +4,8 @@ import {
   QUESTIONS_PER_SESSION,
   calcStars,
   normalizedScore,
+  timeBonus,
+  MAX_TIME_BONUS,
 } from './scoring'
 
 describe('calcStars', () => {
@@ -77,5 +79,35 @@ describe('normalizedScore', () => {
   it('returns 0 rather than dividing by zero', () => {
     expect(normalizedScore(500, 0)).toBe(0)
     expect(normalizedScore(500, -1)).toBe(0)
+  })
+})
+
+describe('timeBonus', () => {
+  it('pays the full bonus for an instant answer and nothing for the last tick', () => {
+    expect(timeBonus(26, 26)).toBe(MAX_TIME_BONUS)
+    expect(timeBonus(0, 26)).toBe(0)
+  })
+
+  it('pays the same for the same relative speed, whatever the limit', () => {
+    // The point of the change: answering with half the clock left is worth
+    // the same on a 40-second question as on a 16-second one. Under the old
+    // timeLeft * 2 rule these paid 40 and 16.
+    expect(timeBonus(20, 40)).toBe(timeBonus(8, 16))
+    expect(timeBonus(30, 40)).toBe(timeBonus(12, 16))
+  })
+
+  it('scales smoothly between the ends', () => {
+    expect(timeBonus(15, 20)).toBe(Math.round(MAX_TIME_BONUS * 0.75))
+    expect(timeBonus(5, 20)).toBe(Math.round(MAX_TIME_BONUS * 0.25))
+  })
+
+  it('clamps rather than paying out beyond the limit', () => {
+    expect(timeBonus(99, 20)).toBe(MAX_TIME_BONUS)
+    expect(timeBonus(-5, 20)).toBe(0)
+  })
+
+  it('returns 0 rather than dividing by zero', () => {
+    expect(timeBonus(10, 0)).toBe(0)
+    expect(timeBonus(10, -1)).toBe(0)
   })
 })
