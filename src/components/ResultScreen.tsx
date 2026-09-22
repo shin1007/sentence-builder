@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
-import { useSoundContext } from '../context/SoundContext'
+import { useSoundContext } from '../context/sound'
 import { getLevel } from '../data/levels'
 import { MODE_LABEL } from '../data/modes'
+import { normalizedScore } from '../utils/scoring'
 import Confetti from './Confetti'
 import type { LevelResult } from '../types'
 import styles from './ResultScreen.module.css'
@@ -20,6 +21,10 @@ export default function ResultScreen({
   const sound = useSoundContext()
   const level = getLevel(result.levelId)!
   const mode = result.mode ?? 'challenge'
+  // Records are ranked on the 10-question-normalized score, so an endless run
+  // needs to see that number too — otherwise a big raw total that didn't beat
+  // the record looks like a bug.
+  const normalized = normalizedScore(result.score, result.totalCount)
   // An endless run that's stopped before the first answer never reaches this
   // screen, so totalCount is always at least 1 here.
   const accuracyPct = Math.round((result.correctCount / result.totalCount) * 100)
@@ -75,6 +80,10 @@ export default function ResultScreen({
           <span className={styles.statLabel}>最大コンボ</span>
         </div>
       </div>
+
+      {mode === 'endless' && (
+        <p className={styles.normalizedNote}>記録は10問換算で {normalized} 点</p>
+      )}
 
       <div className={styles.buttonRow}>
         <button

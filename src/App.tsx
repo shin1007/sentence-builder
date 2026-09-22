@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useForcedLandscape } from './hooks/useForcedLandscape'
-import { SoundProvider, useSoundContext } from './context/SoundContext'
+import { SoundProvider } from './context/SoundContext'
+import { useSoundContext } from './context/sound'
 import { SettingsProvider } from './context/SettingsContext'
 import TitleScreen from './components/TitleScreen'
 import LevelSelect from './components/LevelSelect'

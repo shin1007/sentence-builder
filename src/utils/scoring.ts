@@ -12,6 +12,22 @@ export const QUESTIONS_PER_SESSION = 10
 export const MIN_RANKED_QUESTIONS = QUESTIONS_PER_SESSION
 
 /**
+ * A run's score rescaled to what it would be over a full 10-question session.
+ *
+ * Both modes share one best-score record per level, and raw score is a
+ * running total — so a 60-question endless run always out-totals a 10-question
+ * one no matter how carelessly it was played, which would turn "ベストスコア"
+ * into "longest session". Normalizing per question and scaling back up to ten
+ * keeps the number in the range players already know (a challenge run's
+ * normalized score is exactly its own score) while making the two modes
+ * comparable.
+ */
+export function normalizedScore(score: number, totalCount: number): number {
+  if (totalCount <= 0) return 0
+  return Math.round((score / totalCount) * QUESTIONS_PER_SESSION)
+}
+
+/**
  * Stars from answer accuracy: 3 at 90%+, 2 at 70%+, 1 at 40%+.
  * Returns 0 for runs too short to rank (see MIN_RANKED_QUESTIONS).
  */
