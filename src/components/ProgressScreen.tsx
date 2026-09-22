@@ -1,5 +1,5 @@
 import { loadProgressRecord, resetProgress } from '../utils/progressStats'
-import { useSoundContext } from '../context/SoundContext'
+import { useSoundContext } from '../context/sound'
 import { useState } from 'react'
 import styles from './ProgressScreen.module.css'
 

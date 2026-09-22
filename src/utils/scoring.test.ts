@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { MIN_RANKED_QUESTIONS, QUESTIONS_PER_SESSION, calcStars } from './scoring'
+import {
+  MIN_RANKED_QUESTIONS,
+  QUESTIONS_PER_SESSION,
+  calcStars,
+  normalizedScore,
+} from './scoring'
 
 describe('calcStars', () => {
   it('awards 3 stars at 90% accuracy or better', () => {
@@ -40,5 +45,37 @@ describe('calcStars', () => {
 
   it('keeps the ranked minimum aligned with a full challenge session', () => {
     expect(MIN_RANKED_QUESTIONS).toBe(QUESTIONS_PER_SESSION)
+  })
+})
+
+describe('normalizedScore', () => {
+  it('leaves a full challenge run untouched', () => {
+    // A 10-question run is already the yardstick, so its own score is its
+    // normalized score — old records keep the number they were saved with.
+    expect(normalizedScore(1240, 10)).toBe(1240)
+    expect(normalizedScore(0, 10)).toBe(0)
+  })
+
+  it('scales an endless run down to its 10-question equivalent', () => {
+    expect(normalizedScore(8930, 42)).toBe(2126)
+    expect(normalizedScore(600, 60)).toBe(100)
+  })
+
+  it('stops a long sloppy run from out-ranking a short sharp one', () => {
+    // 60 questions at 100/question loses to 10 questions at 300/question,
+    // even though its raw total is twice as big.
+    const sloppyEndless = normalizedScore(6000, 60)
+    const sharpChallenge = normalizedScore(3000, 10)
+    expect(6000).toBeGreaterThan(3000)
+    expect(sloppyEndless).toBeLessThan(sharpChallenge)
+  })
+
+  it('ranks two endless runs of different lengths on quality, not length', () => {
+    expect(normalizedScore(2000, 10)).toBe(normalizedScore(10000, 50))
+  })
+
+  it('returns 0 rather than dividing by zero', () => {
+    expect(normalizedScore(500, 0)).toBe(0)
+    expect(normalizedScore(500, -1)).toBe(0)
   })
 })

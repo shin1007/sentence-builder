@@ -1,5 +1,5 @@
-import { useSoundContext } from '../context/SoundContext'
-import { useSettingsContext } from '../context/SettingsContext'
+import { useSoundContext } from '../context/sound'
+import { useSettingsContext } from '../context/settings'
 import styles from './SettingsModal.module.css'
 
 export default function SettingsModal({ onClose }: { onClose: () => void }) {

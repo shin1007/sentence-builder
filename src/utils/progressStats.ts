@@ -2,8 +2,14 @@
  * Progress statistics tracker.
  *
  * For every question answered in a session we record:
- *   - firstTry  : answered correctly without any prior miss in the same session
- *   - recovered : answered correctly after at least one miss in the same session
+ *   - firstTry   : answered correctly without any prior miss in the same session
+ *   - recovered  : answered correctly after at least one miss in the same session
+ *   - missedOnly : missed and the session ended without ever getting it right
+ *
+ * firstTry/recovered are recorded the moment a question is answered
+ * correctly. missedOnly can only be known once the session is over — a miss
+ * might still be recovered later in the same run — so GameScreen tallies the
+ * still-unrecovered questions at the end and records them in one call.
  *
  * These are stored globally (not per-level) so the Progressscreen can show
  * an overall growth picture across all levels.
@@ -77,13 +83,17 @@ export function recordRecovered() {
   })
 }
 
-/** Call when a question ends (time-out / no-lives) with only misses and no correct. */
-export function recordMissedOnly() {
+/**
+ * Call once at the end of a session with the number of questions that were
+ * missed and never recovered in it. A count of 0 is a no-op.
+ */
+export function recordMissedOnly(count = 1) {
+  if (count <= 0) return
   const rec = readRecord()
   writeRecord({
     ...rec,
-    totalAnswered: rec.totalAnswered + 1,
-    missedOnly: rec.missedOnly + 1,
+    totalAnswered: rec.totalAnswered + count,
+    missedOnly: rec.missedOnly + count,
   })
 }
 

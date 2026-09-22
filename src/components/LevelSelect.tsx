@@ -1,6 +1,7 @@
 import { LEVELS } from '../data/levels'
 import { loadBestResult } from '../utils/storage'
-import { useSoundContext } from '../context/SoundContext'
+import { normalizedScore } from '../utils/scoring'
+import { useSoundContext } from '../context/sound'
 import { MODE_LABEL } from '../data/modes'
 import type { GameMode, LevelId } from '../types'
 import styles from './LevelSelect.module.css'
@@ -58,7 +59,14 @@ export default function LevelSelect({
                   </span>
                 ))}
               </div>
-              <p className={styles.bestScore}>{best ? `ベストスコア ${best.score}` : 'まだ記録なし'}</p>
+              <p className={styles.bestScore}>
+                {best
+                  ? `ベストスコア ${normalizedScore(best.score, best.totalCount)}`
+                  : 'まだ記録なし'}
+              </p>
+              {best?.mode === 'endless' && (
+                <p className={styles.bestSource}>∞ {best.totalCount}問を10問換算</p>
+              )}
             </button>
           )
         })}
