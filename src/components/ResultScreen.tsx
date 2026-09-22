@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useSoundContext } from '../context/SoundContext'
 import { getLevel } from '../data/levels'
+import { MODE_LABEL } from '../data/modes'
 import Confetti from './Confetti'
 import type { LevelResult } from '../types'
 import type { Achievement } from '../utils/achievements'
@@ -21,6 +22,9 @@ export default function ResultScreen({
 }) {
   const sound = useSoundContext()
   const level = getLevel(result.levelId)!
+  const mode = result.mode ?? 'challenge'
+  // An endless run that's stopped before the first answer never reaches this
+  // screen, so totalCount is always at least 1 here.
   const accuracyPct = Math.round((result.correctCount / result.totalCount) * 100)
 
   useEffect(() => {
@@ -38,6 +42,11 @@ export default function ResultScreen({
 
       <p className={styles.badge}>
         {level.icon} {level.title} クリア！
+      </p>
+      <p className={styles.modeTag}>
+        {mode === 'endless'
+          ? `∞ ${MODE_LABEL[mode]}・${result.totalCount}問`
+          : `▶ ${MODE_LABEL[mode]}`}
       </p>
       {showNewBest && <p className={styles.newBest}>🏆 New Best!</p>}
 

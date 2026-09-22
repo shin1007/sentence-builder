@@ -1,13 +1,16 @@
 import { LEVELS } from '../data/levels'
 import { loadBestResult } from '../utils/storage'
 import { useSoundContext } from '../context/SoundContext'
-import type { LevelId } from '../types'
+import { MODE_LABEL } from '../data/modes'
+import type { GameMode, LevelId } from '../types'
 import styles from './LevelSelect.module.css'
 
 export default function LevelSelect({
+  mode,
   onSelect,
   onBack,
 }: {
+  mode: GameMode
   onSelect: (levelId: LevelId) => void
   onBack: () => void
 }) {
@@ -21,7 +24,11 @@ export default function LevelSelect({
 
       <div className={styles.header}>
         <h2 className={styles.heading}>コースをえらぼう</h2>
-        <p className={styles.sub}>CHOOSE YOUR LEVEL</p>
+        <p className={styles.sub}>
+          <span className={styles.modeTag}>
+            {mode === 'endless' ? '∞' : '▶'} {MODE_LABEL[mode]}
+          </span>
+        </p>
       </div>
 
       <div className={styles.cards}>

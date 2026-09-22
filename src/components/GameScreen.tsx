@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getLevel } from '../data/levels'
 import { pickQuestions } from '../data/questions'
 import { useSoundContext } from '../context/SoundContext'
@@ -10,11 +10,16 @@ import { recordFirstTry, recordRecovered, recordMissedOnly } from '../utils/prog
 import { speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
-import type { LevelId, LevelResult, Question } from '../types'
+import { QUESTIONS_PER_SESSION, calcStars } from '../utils/scoring'
+import type { GameMode, LevelId, LevelResult, Question } from '../types'
 import styles from './GameScreen.module.css'
 
-const QUESTIONS_PER_SESSION = 10
 const START_LIVES = 10
+/** How many questions an endless run draws at a time. Another batch is
+ * appended before the current one runs out, so the run never hits an end. */
+const ENDLESS_BATCH = 30
+/** Append the next batch once this few questions are left in the queue. */
+const ENDLESS_REFILL_AT = 5
 const FEEDBACK_DELAY_CORRECT = 1100
 const FEEDBACK_DELAY_WRONG = 1500
 /** Grace window after the last tile lands before the answer is actually
@@ -50,10 +55,12 @@ function displayFor(tile: Tile, capitalizeFirst: boolean): string {
 
 export default function GameScreen({
   levelId,
+  mode,
   onFinish,
   onExit,
 }: {
   levelId: LevelId
+  mode: GameMode
   onFinish: (
     result: LevelResult,
     isNewBest: boolean,
@@ -65,9 +72,12 @@ export default function GameScreen({
   const sound = useSoundContext()
   const { capitalizeFirst, practiceMode, retryOnMiss } = useSettingsContext()
 
-  const questions = useMemo(
-    () => pickQuestions(levelId, QUESTIONS_PER_SESSION, loadDueIds(levelId)),
-    [levelId],
+  const isEndless = mode === 'endless'
+
+  // Challenge mode draws its ten questions once. Endless keeps the queue
+  // topped up (see the refill effect below) so it never runs dry.
+  const [questions, setQuestions] = useState<Question[]>(() =>
+    pickQuestions(levelId, isEndless ? ENDLESS_BATCH : QUESTIONS_PER_SESSION, loadDueIds(levelId)),
   )
   const [qIndex, setQIndex] = useState(0)
   const question = questions[qIndex]
@@ -82,6 +92,8 @@ export default function GameScreen({
   const [combo, setCombo] = useState(0)
   const [bestCombo, setBestCombo] = useState(0)
   const [correctCount, setCorrectCount] = useState(0)
+  /** Questions actually resolved so far — an endless run is scored over this. */
+  const [answeredCount, setAnsweredCount] = useState(0)
 
   const [status, setStatus] = useState<'playing' | 'correct' | 'wrong'>('playing')
   const [timeLeft, setTimeLeft] = useState(level.timeLimitSec)
@@ -110,6 +122,22 @@ export default function GameScreen({
     document.addEventListener('visibilitychange', onVisibilityChange)
     return () => document.removeEventListener('visibilitychange', onVisibilityChange)
   }, [])
+
+  // Top the endless queue up before it empties. A fresh draw re-consults the
+  // review queue, so questions missed earlier in this same run can resurface.
+  useEffect(() => {
+    if (!isEndless) return
+    if (questions.length - qIndex > ENDLESS_REFILL_AT) return
+    setQuestions((current) => {
+      const seen = new Set(current.map((q) => q.id))
+      const next = pickQuestions(levelId, ENDLESS_BATCH, loadDueIds(levelId))
+      // Avoid repeating a question that's still waiting in the queue; once the
+      // pool is smaller than the queue this can come back empty, so fall back
+      // to the unfiltered draw rather than stalling the run.
+      const fresh = next.filter((q) => !seen.has(q.id))
+      return [...current, ...(fresh.length > 0 ? fresh : next)]
+    })
+  }, [isEndless, qIndex, questions.length, levelId])
 
   const cancelPendingCheck = useCallback(() => {
     if (!pendingCheck.current) return
@@ -172,12 +200,15 @@ export default function GameScreen({
   )
 
   const finishSession = useCallback(
-    (finalScore: number, finalCorrect: number, finalBestCombo: number) => {
-      const total = QUESTIONS_PER_SESSION
-      const accuracy = finalCorrect / total
-      const stars: 0 | 1 | 2 | 3 = accuracy >= 0.9 ? 3 : accuracy >= 0.7 ? 2 : accuracy >= 0.4 ? 1 : 0
+    (finalScore: number, finalCorrect: number, finalBestCombo: number, finalAnswered: number) => {
+      // A challenge run is always out of ten, even when hearts run out early.
+      // An endless run is scored over however many questions were answered —
+      // never zero, so the result screen can't divide by it.
+      const total = isEndless ? Math.max(finalAnswered, 1) : QUESTIONS_PER_SESSION
+      const stars = calcStars(finalCorrect, total)
       const result: LevelResult = {
         levelId,
+        mode,
         score: finalScore,
         correctCount: finalCorrect,
         totalCount: total,
@@ -194,7 +225,7 @@ export default function GameScreen({
       else sound.lose()
       onFinish(result, isNewBest, newAchievements)
     },
-    [levelId, onFinish, sound, practiceMode],
+    [levelId, mode, isEndless, onFinish, sound, practiceMode],
   )
 
   const resolve = useCallback(
@@ -206,6 +237,8 @@ export default function GameScreen({
       let nextBestCombo = bestCombo
       let nextCorrect = correctCount
       let nextLives = lives
+      const nextAnswered = answeredCount + 1
+      setAnsweredCount(nextAnswered)
 
       if (isCorrect) {
         const tier = combo >= 5 ? 2 : combo >= 3 ? 1 : 0
@@ -247,7 +280,9 @@ export default function GameScreen({
         window.setTimeout(() => setShake(false), 450)
       }
 
-      const isLastQuestion = qIndex + 1 >= questions.length
+      // Endless only ends on hearts (or the やめる button) — the queue itself
+      // is refilled before it can run out.
+      const isLastQuestion = !isEndless && qIndex + 1 >= questions.length
       const outOfLives = !practiceMode && nextLives <= 0
       // A wrong answer on the final question (or when lives run out) can never
       // be recovered in this session — count it as missed-only.
@@ -268,7 +303,7 @@ export default function GameScreen({
         }
         pendingAdvance.current = null
         if (isLastQuestion || outOfLives) {
-          finishSession(nextScore, nextCorrect, nextBestCombo)
+          finishSession(nextScore, nextCorrect, nextBestCombo, nextAnswered)
         } else {
           setQIndex((i) => i + 1)
         }
@@ -290,6 +325,7 @@ export default function GameScreen({
       combo,
       bestCombo,
       correctCount,
+      answeredCount,
       lives,
       timeLeft,
       qIndex,
@@ -298,6 +334,7 @@ export default function GameScreen({
       sound,
       finishSession,
       practiceMode,
+      isEndless,
       levelId,
     ],
   )
@@ -309,6 +346,23 @@ export default function GameScreen({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, status])
+
+  /** Back (challenge) / やめる (endless). An endless run the player stops is
+   * still a finished run: it goes to the result screen with whatever was
+   * scored, unless they quit before answering anything at all. */
+  const handleQuit = () => {
+    sound.click()
+    if (!isEndless || answeredCount === 0) {
+      onExit()
+      return
+    }
+    cancelPendingCheck()
+    // Drop any advance queued by the answer they just gave, so it can't fire
+    // a second finish on top of this one.
+    advanceGeneration.current++
+    if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
+    finishSession(score, correctCount, bestCombo, answeredCount)
+  }
 
   const handleListen = () => {
     sound.click()
@@ -345,7 +399,9 @@ export default function GameScreen({
         window.setTimeout(() => setErrorTileUid(null), 450)
 
         if (!practiceMode && nextLives <= 0) {
-          finishSession(score, correctCount, bestCombo)
+          // Hearts ran out mid-question: it's never completed, but it was
+          // attempted and missed, so it counts toward the answered total.
+          finishSession(score, correctCount, bestCombo, answeredCount + 1)
         }
         return
       }
@@ -410,15 +466,25 @@ export default function GameScreen({
     >
       <div className={`${styles.shakeTarget} ${shake ? 'shake' : ''}`}>
         <div className={styles.hud}>
-          <button className={styles.backButton} onClick={onExit} aria-label="レベル選択に戻る">
-            ←
-          </button>
+          {isEndless ? (
+            <button
+              className={styles.quitButton}
+              onClick={handleQuit}
+              aria-label={answeredCount === 0 ? 'レベル選択に戻る' : 'やめて結果を見る'}
+            >
+              ← やめる
+            </button>
+          ) : (
+            <button className={styles.backButton} onClick={handleQuit} aria-label="レベル選択に戻る">
+              ←
+            </button>
+          )}
           <span className={styles.levelTag}>
             {`${level.icon} ${level.title}`}
             {practiceMode && ` 🧪`}
           </span>
           <span className={styles.progress}>
-            {qIndex + 1} / {questions.length}
+            {isEndless ? `${qIndex + 1}問目` : `${qIndex + 1} / ${QUESTIONS_PER_SESSION}`}
           </span>
           <div className={styles.spacer} />
           {!practiceMode && (

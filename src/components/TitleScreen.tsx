@@ -3,24 +3,25 @@ import { requestFullscreenLandscape } from '../hooks/useForcedLandscape'
 import { useSoundContext } from '../context/SoundContext'
 import { useSettingsContext } from '../context/SettingsContext'
 import SettingsModal from './SettingsModal'
+import type { GameMode } from '../types'
 import styles from './TitleScreen.module.css'
 
 export default function TitleScreen({
   onStart,
   onProgress,
 }: {
-  onStart: () => void
+  onStart: (mode: GameMode) => void
   onProgress: () => void
 }) {
   const sound = useSoundContext()
   const { retryOnMiss, practiceMode } = useSettingsContext()
   const [showSettings, setShowSettings] = useState(false)
 
-  const handleStart = () => {
+  const handleStart = (mode: GameMode) => {
     sound.unlock()
     sound.click()
     void requestFullscreenLandscape()
-    onStart()
+    onStart(mode)
   }
 
   return (
@@ -61,9 +62,22 @@ export default function TitleScreen({
       <h1 className={styles.title}>英単語ならべ</h1>
       <p className={styles.subtitle}>並べかえて 英文を 作ろう！</p>
 
-      <button className={styles.startButton} onClick={handleStart}>
-        ▶ 始める
-      </button>
+      <div className={styles.modeRow}>
+        <button
+          className={`${styles.startButton} ${styles.challenge}`}
+          onClick={() => handleStart('challenge')}
+        >
+          <span className={styles.modeTitle}>▶ 10問チャレンジ</span>
+          <span className={styles.modeHint}>10問で スコアを きそう</span>
+        </button>
+        <button
+          className={`${styles.startButton} ${styles.endless}`}
+          onClick={() => handleStart('endless')}
+        >
+          <span className={styles.modeTitle}>∞ ずっと続ける</span>
+          <span className={styles.modeHint}>やめるまで 出題しつづける</span>
+        </button>
+      </div>
 
       <div className={styles.badgeRow}>
         <button

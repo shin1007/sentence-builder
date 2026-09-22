@@ -1,5 +1,13 @@
 export type LevelId = 'eiken4' | 'eiken3' | 'eikenPre2' | 'eiken2' | 'koukoNyushi'
 
+/**
+ * How a session is bounded.
+ * - 'challenge': a fixed 10-question run (the original mode).
+ * - 'endless': keeps serving questions until the player runs out of hearts
+ *   or taps やめる; the result is scored over however many were answered.
+ */
+export type GameMode = 'challenge' | 'endless'
+
 /** Attribution for a question adapted from a real, verifiable past exam
  * (as opposed to an originally-written practice question). */
 export interface QuestionSource {
@@ -34,6 +42,8 @@ export interface LevelInfo {
 
 export interface LevelResult {
   levelId: LevelId
+  /** Absent on results stored before endless mode existed — treat as 'challenge'. */
+  mode?: GameMode
   score: number
   correctCount: number
   totalCount: number

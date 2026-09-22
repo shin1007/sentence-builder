@@ -172,3 +172,14 @@
   font-weight: 800;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
+
+.modeTag {
+  margin: 0.4cqh 0 0;
+  padding: 0.5cqh 1.8cqh;
+  border-radius: 999px;
+  background: rgba(10, 28, 18, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  font-size: clamp(0.65rem, 1.9cqh, 0.95rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
