@@ -9,7 +9,8 @@ import { recordFirstTry, recordRecovered, recordMissedOnly } from '../utils/prog
 import { speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
-import { QUESTIONS_PER_SESSION, calcStars } from '../utils/scoring'
+import { QUESTIONS_PER_SESSION, calcStars, timeBonus } from '../utils/scoring'
+import { timeLimitFor } from '../data/timeLimit'
 import type { GameMode, LevelId, LevelResult, Question } from '../types'
 import styles from './GameScreen.module.css'
 
@@ -91,7 +92,14 @@ export default function GameScreen({
   const [answeredCount, setAnsweredCount] = useState(0)
 
   const [status, setStatus] = useState<'playing' | 'correct' | 'wrong'>('playing')
-  const [timeLeft, setTimeLeft] = useState(level.timeLimitSec)
+  /**
+   * This question's budget, scaled to how many words it takes (see
+   * data/timeLimit.ts). Held in state rather than derived so a question that
+   * arrives mid-render can't rescale the bar the player is already watching;
+   * it's set alongside timeLeft whenever the question changes.
+   */
+  const [timeLimit, setTimeLimit] = useState(() => timeLimitFor(level, questions[0].words.length))
+  const [timeLeft, setTimeLeft] = useState(timeLimit)
   const [scorePop, setScorePop] = useState<{ id: number; value: number } | null>(null)
   const [shake, setShake] = useState(false)
   const [errorTileUid, setErrorTileUid] = useState<number | null>(null)
@@ -113,6 +121,14 @@ export default function GameScreen({
    * ends is what never got recovered.
    */
   const questionOutcome = useRef<Map<string, 'missed' | 'recovered'>>(new Map())
+  /**
+   * Every question id this run has queued up, so an endless refill can skip
+   * what the player has already seen. Refills used to be deduped only against
+   * the questions still waiting in the queue, so once a run went past the size
+   * of the level's pool (210 questions at the smallest) it quietly started
+   * serving repeats.
+   */
+  const servedIds = useRef<Set<string>>(new Set(questions.map((q) => q.id)))
 
   // Freeze the countdown while the tab/app is backgrounded so returning
   // players don't find their time silently drained (or the round already
@@ -130,13 +146,18 @@ export default function GameScreen({
     if (!isEndless) return
     if (questions.length - qIndex > ENDLESS_REFILL_AT) return
     setQuestions((current) => {
-      const seen = new Set(current.map((q) => q.id))
       const next = pickQuestions(levelId, ENDLESS_BATCH, loadDueIds(levelId))
-      // Avoid repeating a question that's still waiting in the queue; once the
-      // pool is smaller than the queue this can come back empty, so fall back
-      // to the unfiltered draw rather than stalling the run.
-      const fresh = next.filter((q) => !seen.has(q.id))
-      return [...current, ...(fresh.length > 0 ? fresh : next)]
+      // Skip anything this run has already served. A long enough run exhausts
+      // the pool, at which point this comes back empty — then the run starts
+      // over on a clean slate rather than stalling with nothing to show.
+      let fresh = next.filter((q) => !servedIds.current.has(q.id))
+      if (fresh.length === 0) {
+        servedIds.current = new Set(current.map((q) => q.id))
+        fresh = next.filter((q) => !servedIds.current.has(q.id))
+        if (fresh.length === 0) fresh = next
+      }
+      for (const q of fresh) servedIds.current.add(q.id)
+      return [...current, ...fresh]
     })
   }, [isEndless, qIndex, questions.length, levelId])
 
@@ -154,9 +175,11 @@ export default function GameScreen({
     setTray(buildTiles(q))
     setSlots(new Array(q.words.length).fill(null))
     setStatus('playing')
-    setTimeLeft(level.timeLimitSec)
+    const nextLimit = timeLimitFor(level, q.words.length)
+    setTimeLimit(nextLimit)
+    setTimeLeft(nextLimit)
     lastTickSecond.current = -1
-  }, [qIndex, questions, level.timeLimitSec, cancelPendingCheck])
+  }, [qIndex, questions, level, cancelPendingCheck])
 
   // The countdown shouldn't start ticking while the Japanese prompt is still
   // being read aloud, so wait for that playback to finish before arming it.
@@ -253,8 +276,8 @@ export default function GameScreen({
       if (isCorrect) {
         const tier = combo >= 5 ? 2 : combo >= 3 ? 1 : 0
         const multiplier = tier === 2 ? 2 : tier === 1 ? 1.5 : 1
-        const timeBonus = practiceMode ? 0 : Math.round(timeLeft * 2)
-        const gained = Math.round(100 * multiplier) + timeBonus
+        const bonus = practiceMode ? 0 : timeBonus(timeLeft, timeLimit)
+        const gained = Math.round(100 * multiplier) + bonus
 
         nextScore = score + gained
         nextCombo = combo + 1
@@ -334,6 +357,7 @@ export default function GameScreen({
       answeredCount,
       lives,
       timeLeft,
+      timeLimit,
       qIndex,
       question,
       questions.length,
@@ -462,8 +486,9 @@ export default function GameScreen({
     sound.remove()
   }
 
-  const timerPct = (timeLeft / level.timeLimitSec) * 100
-  const timerClass = timeLeft <= 4 ? 'urgent' : timeLeft <= level.timeLimitSec * 0.4 ? 'warn' : ''
+  const timerPct = (timeLeft / timeLimit) * 100
+  const timerClass = timeLeft <= 4 ? 'urgent' : timeLeft <= timeLimit * 0.4 ? 'warn' : ''
+  const secondsLeft = Math.ceil(timeLeft)
 
   return (
     <div
@@ -515,12 +540,26 @@ export default function GameScreen({
           </div>
         </div>
 
+        {/* The bar's urgency was carried by colour alone (green → amber →
+            red), which says nothing to a player who can't tell those apart.
+            The icon and the seconds count say the same thing in a second and
+            third channel. */}
         {!practiceMode && (
-          <div className={styles.timerTrack}>
-            <div
-              className={`${styles.timerFill} ${timerClass ? styles[timerClass] : ''}`}
-              style={{ width: `${timerPct}%` }}
-            />
+          <div className={styles.timerRow}>
+            <span
+              className={`${styles.timerLabel} ${timerClass ? styles[timerClass] : ''}`}
+              role="timer"
+              aria-live="off"
+            >
+              <span aria-hidden="true">{timerClass === 'urgent' ? '⚠️' : timerClass === 'warn' ? '⏳' : '⏱️'}</span>
+              <span className={styles.timerSeconds}>{secondsLeft}</span>
+            </span>
+            <div className={styles.timerTrack}>
+              <div
+                className={`${styles.timerFill} ${timerClass ? styles[timerClass] : ''}`}
+                style={{ width: `${timerPct}%` }}
+              />
+            </div>
           </div>
         )}
 

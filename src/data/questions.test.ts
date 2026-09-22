@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pickQuestions, QUESTIONS } from './questions'
+import { pickQuestions, QUESTIONS, MAX_WORDS_PER_QUESTION } from './questions'
 import type { LevelId } from '../types'
 
 const LEVEL_IDS = Object.keys(QUESTIONS) as LevelId[]
@@ -77,4 +77,22 @@ describe('question bank data integrity', () => {
       expect(new Set(ids).size).toBe(ids.length)
     })
   }
+})
+
+describe('question length cap', () => {
+  it('never serves a question longer than the cap', () => {
+    for (const levelId of LEVEL_IDS) {
+      for (const question of QUESTIONS[levelId]) {
+        expect(question.words.length).toBeLessThanOrEqual(MAX_WORDS_PER_QUESTION)
+      }
+    }
+  })
+
+  it('still leaves every level a pool worth drawing from', () => {
+    // Filtering must not quietly gut a bank — the cap is meant to remove a
+    // handful of outliers, not a meaningful share of the questions.
+    for (const levelId of LEVEL_IDS) {
+      expect(QUESTIONS[levelId].length).toBeGreaterThan(100)
+    }
+  })
 })

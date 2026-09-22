@@ -36,7 +36,12 @@ export interface LevelInfo {
   description: string
   gradient: [string, string]
   accent: string
-  timeLimitSec: number
+  /**
+   * Seconds of thinking time granted per word of the answer, on top of
+   * BASE_TIME_SEC. This is the level’s difficulty dial — see
+   * data/timeLimit.ts for why the limit is derived rather than fixed.
+   */
+  secPerWord: number
   icon: string
 }
 

@@ -36,3 +36,22 @@ export function calcStars(correctCount: number, totalCount: number): 0 | 1 | 2 |
   const accuracy = correctCount / totalCount
   return accuracy >= 0.9 ? 3 : accuracy >= 0.7 ? 2 : accuracy >= 0.4 ? 1 : 0
 }
+
+/** Most a single correct answer can earn from speed, before combo. */
+export const MAX_TIME_BONUS = 50
+
+/**
+ * Speed bonus for a correct answer, as a share of the time that was on offer.
+ *
+ * This used to be `timeLeft * 2`, which quietly made the bonus depend on how
+ * long the clock happened to be: the same brisk answer was worth more on a
+ * level with a generous limit than on a hard one, so the reward for speed
+ * shrank exactly where the questions got harder. Scaling by the fraction of
+ * the limit still on the clock pays the same for the same relative speed,
+ * whatever the level or the length of the sentence.
+ */
+export function timeBonus(timeLeft: number, timeLimitSec: number): number {
+  if (timeLimitSec <= 0) return 0
+  const remaining = Math.min(Math.max(timeLeft, 0), timeLimitSec) / timeLimitSec
+  return Math.round(MAX_TIME_BONUS * remaining)
+}
