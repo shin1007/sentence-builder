@@ -113,7 +113,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                 onClick={() => handleSelectPractice(true)}
               >
                 <div className={styles.optionHeader}>
-                  <span className={styles.optionTitle}>🧪 れんしゅう</span>
+                  <span className={styles.optionTitle}>🧪 練習モード</span>
                 </div>
                 <p className={styles.optionDesc}>
                   タイマーもライフ制限もなしで、自分のペースでじっくり学べます。

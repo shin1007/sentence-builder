@@ -53,16 +53,16 @@ export default function TitleScreen({
       </div>
 
       <div className={styles.tileRow}>
-        <div className={styles.tile}>A</div>
-        <div className={styles.tile}>B</div>
-        <div className={styles.tile}>C</div>
+        <div className={styles.tile}>英</div>
+        <div className={styles.tile}>単</div>
+        <div className={styles.tile}>語</div>
       </div>
 
       <h1 className={styles.title}>英単語ならべ</h1>
-      <p className={styles.subtitle}>ならべかえて えいぶんを つくろう！</p>
+      <p className={styles.subtitle}>並べかえて 英文を 作ろう！</p>
 
       <button className={styles.startButton} onClick={handleStart}>
-        ▶ はじめる
+        ▶ 始める
       </button>
 
       <div className={styles.badgeRow}>
@@ -75,7 +75,7 @@ export default function TitleScreen({
           title="クリックして設定を変更"
         >
           {retryOnMiss ? '🔄 やり直しモード' : '⏩ 一発勝負モード'}
-          {practiceMode && '・れんしゅう'}
+          {practiceMode && '・練習'}
         </button>
         <button
           className={`${styles.badge} ${styles.badgeButton}`}
