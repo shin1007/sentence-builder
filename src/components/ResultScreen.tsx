@@ -4,19 +4,16 @@ import { getLevel } from '../data/levels'
 import { MODE_LABEL } from '../data/modes'
 import Confetti from './Confetti'
 import type { LevelResult } from '../types'
-import type { Achievement } from '../utils/achievements'
 import styles from './ResultScreen.module.css'
 
 export default function ResultScreen({
   result,
   isNewBest,
-  newAchievements,
   onRetry,
   onLevelSelect,
 }: {
   result: LevelResult
   isNewBest: boolean
-  newAchievements: Achievement[]
   onRetry: () => void
   onLevelSelect: () => void
 }) {
@@ -78,20 +75,6 @@ export default function ResultScreen({
           <span className={styles.statLabel}>最大コンボ</span>
         </div>
       </div>
-
-      {newAchievements.length > 0 && (
-        <div className={styles.achievementRow} role="status">
-          {newAchievements.map((achievement) => (
-            <div key={achievement.id} className={styles.achievementBadge}>
-              <span className={styles.achievementIcon}>{achievement.icon}</span>
-              <span className={styles.achievementText}>
-                <span className={styles.achievementTitle}>実績解除：{achievement.title}</span>
-                <span className={styles.achievementDesc}>{achievement.description}</span>
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
 
       <div className={styles.buttonRow}>
         <button

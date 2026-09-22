@@ -4,6 +4,19 @@
  * without SpeechSynthesis support.
  */
 
+/**
+ * Hard cap on how long a caller will wait for an utterance to report back.
+ *
+ * Callers gate real game progress on these promises — the countdown only arms
+ * once the Japanese prompt has been read, and the next question only loads
+ * once the English sentence has. Chrome drops `end` events often enough for
+ * that to matter (backgrounding the tab mid-utterance is the easy way to
+ * reproduce it), and without a cap a dropped event leaves the run frozen with
+ * no way out but a reload. Ten seconds is well past the longest sentence in
+ * the bank read at 0.88x, so a healthy utterance never hits this.
+ */
+export const SPEECH_TIMEOUT_MS = 10_000
+
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window
 }
@@ -26,8 +39,30 @@ function speak(text: string, lang: string, rate: number): Promise<void> {
   if (voice) utter.voice = voice
 
   return new Promise((resolve) => {
-    utter.onend = () => resolve()
-    utter.onerror = () => resolve()
+    let settled = false
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+    const settle = () => {
+      if (settled) return
+      settled = true
+      if (timeoutId !== undefined) clearTimeout(timeoutId)
+      resolve()
+    }
+
+    utter.onend = settle
+    utter.onerror = settle
+
+    timeoutId = setTimeout(() => {
+      // The utterance never reported back. Clear it out of the queue so it
+      // can't block whatever is spoken next, then let the caller carry on.
+      try {
+        synth.cancel()
+      } catch {
+        /* nothing to cancel — carry on regardless */
+      }
+      settle()
+    }, SPEECH_TIMEOUT_MS)
+
     synth.speak(utter)
   })
 }
