@@ -3,6 +3,7 @@ import { requestFullscreenLandscape } from '../hooks/useForcedLandscape'
 import { useSoundContext } from '../context/sound'
 import { useSettingsContext } from '../context/settings'
 import SettingsModal from './SettingsModal'
+import { MODE_LABEL } from '../data/modes'
 import type { GameMode } from '../types'
 import styles from './TitleScreen.module.css'
 
@@ -67,14 +68,14 @@ export default function TitleScreen({
           className={`${styles.startButton} ${styles.challenge}`}
           onClick={() => handleStart('challenge')}
         >
-          <span className={styles.modeTitle}>▶ 10問チャレンジ</span>
+          <span className={styles.modeTitle}>▶ {MODE_LABEL.challenge}</span>
           <span className={styles.modeHint}>10問で スコアを きそう</span>
         </button>
         <button
           className={`${styles.startButton} ${styles.endless}`}
           onClick={() => handleStart('endless')}
         >
-          <span className={styles.modeTitle}>∞ ずっと続ける</span>
+          <span className={styles.modeTitle}>∞ {MODE_LABEL.endless}</span>
           <span className={styles.modeHint}>やめるまで 出題しつづける</span>
         </button>
       </div>
