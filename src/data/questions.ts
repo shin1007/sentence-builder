@@ -1,8 +1,13 @@
 import type { LevelId, Question } from '../types'
+import { grammarIdForNote, type GrammarId } from './grammar'
 import { eiken4Questions } from './templates/eiken4'
+import { eiken4ExtraQuestions } from './templates/eiken4Extra'
 import { eiken3Questions } from './templates/eiken3'
+import { eiken3ExtraQuestions } from './templates/eiken3Extra'
 import { eikenPre2Questions } from './templates/eikenPre2'
+import { eikenPre2ExtraQuestions } from './templates/eikenPre2Extra'
 import { eiken2Questions } from './templates/eiken2'
+import { eiken2ExtraQuestions } from './templates/eiken2Extra'
 import { koukoNyushiQuestions } from './templates/koukoNyushi'
 import { koukoNyushiRealQuestions } from './templates/koukoNyushiReal'
 
@@ -18,8 +23,16 @@ import { koukoNyushiRealQuestions } from './templates/koukoNyushiReal'
  */
 export const MAX_WORDS_PER_QUESTION = 12
 
-const withinLength = (questions: Question[]): Question[] =>
-  questions.filter((question) => question.words.length <= MAX_WORDS_PER_QUESTION)
+/**
+ * Filters out over-long questions and stamps each survivor with its grammar
+ * tag. Templates only write the display `note`; the normalized tag is derived
+ * here so a template author has one thing to keep in sync rather than two
+ * (grammar.test.ts fails if a note has no mapping).
+ */
+const buildBank = (questions: Question[]): Question[] =>
+  questions
+    .filter((question) => question.words.length <= MAX_WORDS_PER_QUESTION)
+    .map((question) => ({ ...question, grammar: grammarIdForNote(question.note) }))
 
 /**
  * Each level's bank is generated from a small set of grammar templates
@@ -28,11 +41,40 @@ const withinLength = (questions: Question[]): Question[] =>
  * far more lexical variety than hand-typing every sentence would allow.
  */
 export const QUESTIONS: Record<LevelId, Question[]> = {
-  eiken4: withinLength(eiken4Questions),
-  eiken3: withinLength(eiken3Questions),
-  eikenPre2: withinLength(eikenPre2Questions),
-  eiken2: withinLength(eiken2Questions),
-  koukoNyushi: withinLength([...koukoNyushiQuestions, ...koukoNyushiRealQuestions]),
+  eiken4: buildBank([...eiken4Questions, ...eiken4ExtraQuestions]),
+  eiken3: buildBank([...eiken3Questions, ...eiken3ExtraQuestions]),
+  eikenPre2: buildBank([...eikenPre2Questions, ...eikenPre2ExtraQuestions]),
+  eiken2: buildBank([...eiken2Questions, ...eiken2ExtraQuestions]),
+  koukoNyushi: buildBank([...koukoNyushiQuestions, ...koukoNyushiRealQuestions]),
+}
+
+/**
+ * Each level's questions indexed by grammar tag. Review that resurfaces a
+ * grammar point needs *other* sentences drilling the same point, and this is
+ * the lookup for them; it also makes thin tags (one or two sentences, where
+ * "review" would just replay the same sentence) easy to spot.
+ */
+export const QUESTIONS_BY_GRAMMAR: Record<LevelId, Partial<Record<GrammarId, Question[]>>> = Object.fromEntries(
+  Object.entries(QUESTIONS).map(([levelId, questions]) => {
+    const byGrammar: Partial<Record<GrammarId, Question[]>> = {}
+    for (const question of questions) {
+      if (!question.grammar) continue
+      ;(byGrammar[question.grammar] ??= []).push(question)
+    }
+    return [levelId, byGrammar]
+  }),
+) as Record<LevelId, Partial<Record<GrammarId, Question[]>>>
+
+/** How many questions exist for each grammar tag, across every level. */
+export function grammarCoverage(): Map<GrammarId, number> {
+  const counts = new Map<GrammarId, number>()
+  for (const questions of Object.values(QUESTIONS)) {
+    for (const question of questions) {
+      if (!question.grammar) continue
+      counts.set(question.grammar, (counts.get(question.grammar) ?? 0) + 1)
+    }
+  }
+  return counts
 }
 
 function shuffle<T>(items: T[]): T[] {
