@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   countDueQuestions,
+  GRAMMAR_BLOCKED_LEAD,
   pickGrammarQuestions,
   pickQuestions,
   pickReviewQuestions,
@@ -11,7 +12,7 @@ import {
   staleRemovedIds,
 } from './questions'
 import { REMOVED_QUESTION_IDS } from './removedQuestions'
-import type { GrammarId } from './grammar'
+import { contrastingGrammar, type GrammarId } from './grammar'
 import type { LevelId } from '../types'
 
 const LEVEL_IDS = Object.keys(QUESTIONS) as LevelId[]
@@ -152,14 +153,36 @@ describe('countDueQuestions', () => {
 })
 
 describe('pickGrammarQuestions', () => {
-  it('returns only questions on the requested grammar point, capped at count', () => {
+  it('opens on the point, then mixes in only contrasting points, ending once its own questions run out', () => {
     for (const levelId of LEVEL_IDS) {
       for (const [grammar, questions] of Object.entries(QUESTIONS_BY_GRAMMAR[levelId])) {
         const picked = pickGrammarQuestions(levelId, grammar as GrammarId, 10)
-        expect(picked).toHaveLength(Math.min(10, questions!.length))
-        expect(picked.every((question) => question.grammar === grammar)).toBe(true)
+        const own = picked.filter((question) => question.grammar === grammar)
+        const allowed = new Set<string>([grammar, ...contrastingGrammar(grammar as GrammarId)])
+        expect(picked.length).toBeLessThanOrEqual(10)
+        expect(picked.every((question) => allowed.has(question.grammar!))).toBe(true)
+        expect(picked.slice(0, GRAMMAR_BLOCKED_LEAD).every((question) => question.grammar === grammar)).toBe(true)
+        expect(new Set(picked.map((question) => question.id)).size).toBe(picked.length)
+        // Never padded out with contrast: a short run means the point's own
+        // questions ran out, and it ends on one of them.
+        if (picked.length < 10) {
+          expect(own).toHaveLength(questions!.length)
+          expect(picked[picked.length - 1].grammar).toBe(grammar)
+        }
       }
     }
+  })
+
+  it('mixes 3 contrasting questions into a full run when the level has them', () => {
+    const levelId = 'eikenPre2'
+    const picked = pickGrammarQuestions(levelId, 'presentPerfectExperience', 10)
+    expect(picked).toHaveLength(10)
+    expect(picked.filter((question) => question.grammar !== 'presentPerfectExperience')).toHaveLength(3)
+  })
+
+  it('is all on the point when nothing in the level contrasts with it', () => {
+    const picked = pickGrammarQuestions('eiken4', 'beCopula', 10)
+    expect(picked.every((question) => question.grammar === 'beCopula')).toBe(true)
   })
 })
 

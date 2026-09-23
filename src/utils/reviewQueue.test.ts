@@ -4,8 +4,10 @@ import {
   dueReviewCount,
   isShakyAnswer,
   loadDueIds,
+  loadRetention,
   recordCorrect,
   recordMiss,
+  recordReviewRecall,
   recordShaky,
 } from './reviewQueue'
 import { QUESTIONS } from '../data/questions'
@@ -155,5 +157,28 @@ describe('reviewQueue', () => {
       expect(isShakyAnswer({ timeLeft: 0, timeLimit: 10, removals: 0, timed: false })).toBe(false)
       expect(isShakyAnswer({ timeLeft: 0, timeLimit: 10, removals: 2, timed: false })).toBe(true)
     })
+  })
+})
+
+describe('review recall', () => {
+  beforeEach(() => {
+    globalThis.localStorage = new MemoryStorage() as unknown as Storage
+  })
+
+  it('books only questions that were due, under the step they were at', () => {
+    recordReviewRecall('eiken4', 'not-queued', true, NOW)
+    expect(loadRetention()).toEqual([])
+
+    recordMiss('eiken4', 'a', NOW)
+    recordReviewRecall('eiken4', 'a', true, NOW)
+    recordCorrect('eiken4', 'a', NOW) // → step 1, due in a day
+    // Not due yet: an answer now isn't a spaced recall.
+    recordReviewRecall('eiken4', 'a', false, NOW + DAY_MS / 2)
+    recordReviewRecall('eiken4', 'a', false, NOW + DAY_MS)
+
+    expect(loadRetention()).toEqual([
+      { step: 0, intervalDays: 0, attempts: 1, correct: 1 },
+      { step: 1, intervalDays: 1, attempts: 1, correct: 0 },
+    ])
   })
 })
