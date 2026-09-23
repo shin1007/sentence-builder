@@ -1,5 +1,6 @@
 import type { LevelId, Question } from '../types'
 import { grammarIdForNote, type GrammarId } from './grammar'
+import { REMOVED_QUESTION_IDS } from './removedQuestions'
 import { eiken4Questions } from './templates/eiken4'
 import { eiken4ExtraQuestions } from './templates/eiken4Extra'
 import { eiken3Questions } from './templates/eiken3'
@@ -29,14 +30,23 @@ import { koukoNyushiVocabQuestions } from './templates/koukoNyushiVocab'
  */
 export const MAX_WORDS_PER_QUESTION = 12
 
+/** Ids from REMOVED_QUESTION_IDS that some template actually produced. */
+const removedSeen = new Set<string>()
+
 /**
- * Filters out over-long questions and stamps each survivor with its grammar
- * tag. Templates only write the display `note`; the normalized tag is derived
+ * Filters out over-long questions and nonsense pairings (see
+ * removedQuestions.ts) and stamps each survivor with its grammar tag.
+ * Templates only write the display `note`; the normalized tag is derived
  * here so a template author has one thing to keep in sync rather than two
  * (grammar.test.ts fails if a note has no mapping).
  */
 const buildBank = (questions: Question[]): Question[] =>
   questions
+    .filter((question) => {
+      if (!REMOVED_QUESTION_IDS.has(question.id)) return true
+      removedSeen.add(question.id)
+      return false
+    })
     .filter((question) => question.words.length <= MAX_WORDS_PER_QUESTION)
     .map((question) => ({ ...question, grammar: grammarIdForNote(question.note) }))
 
@@ -60,6 +70,9 @@ export const QUESTIONS: Record<LevelId, Question[]> = {
  * the lookup for them; it also makes thin tags (one or two sentences, where
  * "review" would just replay the same sentence) easy to spot.
  */
+/** Removal-list ids no template produces — a typo, or a template that changed. */
+export const staleRemovedIds = (): string[] => [...REMOVED_QUESTION_IDS].filter((id) => !removedSeen.has(id))
+
 export const QUESTIONS_BY_GRAMMAR: Record<LevelId, Partial<Record<GrammarId, Question[]>>> = Object.fromEntries(
   Object.entries(QUESTIONS).map(([levelId, questions]) => {
     const byGrammar: Partial<Record<GrammarId, Question[]>> = {}

@@ -8,7 +8,9 @@ import {
   QUESTIONS,
   QUESTIONS_BY_GRAMMAR,
   MAX_WORDS_PER_QUESTION,
+  staleRemovedIds,
 } from './questions'
+import { REMOVED_QUESTION_IDS } from './removedQuestions'
 import type { GrammarId } from './grammar'
 import type { LevelId } from '../types'
 
@@ -169,6 +171,12 @@ describe('questionsByIds', () => {
 })
 
 describe('question bank data integrity', () => {
+  it('drops every removed question, and every removed id names a real question', () => {
+    expect(staleRemovedIds()).toEqual([])
+    const served = Object.values(QUESTIONS).flat()
+    expect(served.filter((question) => REMOVED_QUESTION_IDS.has(question.id))).toEqual([])
+  })
+
   for (const levelId of LEVEL_IDS) {
     it(`${levelId}: every question has a non-empty jp prompt and non-empty words`, () => {
       for (const question of QUESTIONS[levelId]) {
