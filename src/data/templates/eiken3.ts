@@ -20,17 +20,32 @@ const PAST_ACTIVITIES = [
   { en: 'fixed my bike', jp: '自転車を直しました' },
 ]
 
-const ADJ_MORE = [
-  { en: 'expensive', jp: '高い' },
-  { en: 'beautiful', jp: '美しい' },
-  { en: 'difficult', jp: '難しい' },
-  { en: 'popular', jp: '人気' },
-  { en: 'important', jp: '重要' },
-  { en: 'interesting', jp: '面白い' },
-  { en: 'comfortable', jp: '快適' },
-  { en: 'useful', jp: '便利' },
-  { en: 'careful', jp: '注意深い' },
-  { en: 'dangerous', jp: '危険' },
+/**
+ * Which `more 〜` adjective goes with each of THINGS, by index. Cycling one
+ * list against the other produced sentences like "This umbrella is more
+ * dangerous than that one", so each thing gets an adjective that fits it.
+ */
+const ADJ_MORE_FOR_THING = [
+  { en: 'expensive', jp: '高い' }, // pen
+  { en: 'beautiful', jp: '美しい' }, // bag
+  { en: 'difficult', jp: '難しい' }, // book
+  { en: 'popular', jp: '人気' }, // cap
+  { en: 'expensive', jp: '高い' }, // ball
+  { en: 'important', jp: '大切' }, // key
+  { en: 'beautiful', jp: '美しい' }, // watch
+  { en: 'expensive', jp: '高い' }, // bike
+  { en: 'popular', jp: '人気' }, // camera
+  { en: 'useful', jp: '便利' }, // umbrella
+  { en: 'popular', jp: '人気' }, // notebook
+  { en: 'useful', jp: '便利' }, // eraser
+  { en: 'expensive', jp: '高い' }, // ruler
+  { en: 'expensive', jp: '高い' }, // wallet
+  { en: 'popular', jp: '人気' }, // phone
+  { en: 'beautiful', jp: '美しい' }, // guitar
+  { en: 'popular', jp: '人気' }, // racket
+  { en: 'beautiful', jp: '美しい' }, // kite
+  { en: 'beautiful', jp: '美しい' }, // doll
+  { en: 'interesting', jp: '面白い' }, // robot
 ]
 
 const GERUND_ACTIVITIES = [
@@ -87,11 +102,11 @@ const WEATHER = [
   { en: 'very windy', jp: '風が強かった' },
   { en: 'very hot', jp: 'とても暑かった' },
   { en: 'very cold', jp: 'とても寒かった' },
-  { en: 'stormy', jp: '嵐だった' },
+  { en: 'very dark', jp: 'とても暗かった' },
   { en: 'foggy', jp: '霧が濃かった' },
   { en: 'cloudy', jp: '曇っていた' },
   { en: 'too sunny', jp: '日差しが強すぎた' },
-  { en: 'humid', jp: '湿気が多かった' },
+  { en: 'very rainy', jp: 'ひどい雨だった' },
 ]
 
 const ACTIVITIES_GO = [
@@ -120,40 +135,31 @@ const SKILLS = [
   { en: 'swim butterfly', jp: 'バタフライで泳ぐ' },
 ]
 
-const LANDMARKS = [
-  { en: 'mountain', jp: '山' },
-  { en: 'river', jp: '川' },
-  { en: 'building', jp: '建物' },
-  { en: 'bridge', jp: '橋' },
-  { en: 'lake', jp: '湖' },
-  { en: 'tower', jp: 'タワー' },
-  { en: 'park', jp: '公園' },
-  { en: 'school', jp: '学校' },
-  { en: 'station', jp: '駅' },
-  { en: 'stadium', jp: 'スタジアム' },
-]
-
-const SUPERLATIVES = [
-  { en: 'tallest', jp: '一番高い' },
-  { en: 'oldest', jp: '一番古い' },
-  { en: 'biggest', jp: '一番大きい' },
-  { en: 'smallest', jp: '一番小さい' },
-  { en: 'longest', jp: '一番長い' },
-  { en: 'most beautiful', jp: '一番美しい' },
-  { en: 'most famous', jp: '一番有名' },
-  { en: 'most popular', jp: '一番人気' },
-  { en: 'cheapest', jp: '一番安い' },
-  { en: 'fastest', jp: '一番速い' },
+/**
+ * Landmark + superlative + place, chosen together. Cycling three lists
+ * against each other produced "This stadium is the fastest in Australia".
+ */
+const LANDMARK_SUPERLATIVES = [
+  { landmark: 'mountain', landmarkJp: '山', sup: 'tallest', supJp: '一番高い', place: 'Japan', placeJp: '日本' },
+  { landmark: 'river', landmarkJp: '川', sup: 'longest', supJp: '一番長い', place: 'Kyoto', placeJp: '京都' },
+  { landmark: 'building', landmarkJp: '建物', sup: 'oldest', supJp: '一番古い', place: 'Osaka', placeJp: '大阪' },
+  { landmark: 'bridge', landmarkJp: '橋', sup: 'most famous', supJp: '一番有名', place: 'Tokyo', placeJp: '東京' },
+  { landmark: 'lake', landmarkJp: '湖', sup: 'biggest', supJp: '一番大きい', place: 'Hokkaido', placeJp: '北海道' },
+  { landmark: 'tower', landmarkJp: 'タワー', sup: 'tallest', supJp: '一番高い', place: 'London', placeJp: 'ロンドン' },
+  { landmark: 'park', landmarkJp: '公園', sup: 'most beautiful', supJp: '一番美しい', place: 'Paris', placeJp: 'パリ' },
+  { landmark: 'school', landmarkJp: '学校', sup: 'oldest', supJp: '一番古い', place: 'America', placeJp: 'アメリカ' },
+  { landmark: 'station', landmarkJp: '駅', sup: 'biggest', supJp: '一番大きい', place: 'Australia', placeJp: 'オーストラリア' },
+  { landmark: 'stadium', landmarkJp: 'スタジアム', sup: 'newest', supJp: '一番新しい', place: 'Canada', placeJp: 'カナダ' },
 ]
 
 const OBJECTS_TASK = [
   { en: 'this report', jp: 'このレポート' },
   { en: 'my homework', jp: '宿題' },
-  { en: 'the project', jp: 'プロジェクト' },
+  { en: 'this letter', jp: 'この手紙' },
   { en: 'this essay', jp: 'このエッセイ' },
   { en: 'the form', jp: 'この用紙' },
-  { en: 'my assignment', jp: '課題' },
-  { en: 'the presentation', jp: 'プレゼンテーション' },
+  { en: 'this work', jp: 'この仕事' },
+  { en: 'my speech', jp: 'スピーチ' },
   { en: 'this puzzle', jp: 'このパズル' },
   { en: 'the drawing', jp: 'この絵' },
   { en: 'my chores', jp: '家事' },
@@ -169,7 +175,7 @@ const SKILL_LEARN = [
   { en: 'play chess', jp: 'チェスの仕方' },
   { en: 'bake bread', jp: 'パンの焼き方' },
   { en: 'fix a car', jp: '車の直し方' },
-  { en: 'knit a scarf', jp: 'マフラーの編み方' },
+  { en: 'make a cake', jp: 'ケーキの作り方' },
 ]
 
 const ADV_COMPARATIVE = [
@@ -180,7 +186,7 @@ const ADV_COMPARATIVE = [
   { en: 'finishes quicker', jp: 'より早く終わります' },
   { en: 'sleeps longer', jp: 'より長く眠ります' },
   { en: 'walks slower', jp: 'よりゆっくり歩きます' },
-  { en: 'talks louder', jp: 'より大きな声で話します' },
+  { en: 'sings better', jp: 'より上手に歌います' },
   { en: 'works harder', jp: 'より一生懸命働きます' },
   { en: 'eats faster', jp: 'より早く食べます' },
 ]
@@ -225,7 +231,7 @@ export const eiken3Questions: Question[] = [
     q(`e3-t2-${i}`, `彼は来週${d.jp}を訪れるつもりです。`, `He is going to visit ${d.en} next week.`, 'be going to'),
   ),
   ...THINGS.map((t, i) => {
-    const adj = ADJ_MORE[i % ADJ_MORE.length]
+    const adj = ADJ_MORE_FOR_THING[i % ADJ_MORE_FOR_THING.length]
     return q(
       `e3-t3-${i}`,
       `この${t.jp}はあの${t.jp}より${adj.jp}です。`,
@@ -255,16 +261,14 @@ export const eiken3Questions: Question[] = [
     q(`e3-t10-${i}`, `彼女はとても上手に${s.jp}ことができます。`, `She can ${s.en} very well.`, '助動詞 can'),
   ),
   ...PAST_ACTIVITIES.map((p, i) => q(`e3-t11-${i}`, `私は先週${p.jp}。`, `I ${p.en} last week.`, '過去形')),
-  ...LANDMARKS.map((l, i) => {
-    const sup = SUPERLATIVES[i % SUPERLATIVES.length]
-    const dest = DESTINATIONS[i % DESTINATIONS.length]
-    return q(
+  ...LANDMARK_SUPERLATIVES.map((l, i) =>
+    q(
       `e3-t12-${i}`,
-      `この${l.jp}は${dest.jp}で${sup.jp}です。`,
-      `This ${l.en} is the ${sup.en} in ${dest.en}.`,
+      `この${l.landmarkJp}は${l.placeJp}で${l.supJp}です。`,
+      `This ${l.landmark} is the ${l.sup} in ${l.place}.`,
       '最上級',
-    )
-  }),
+    ),
+  ),
   ...PLACE_TYPES.map((p, i) =>
     q(`e3-t13-${i}`, `彼らは今、${p.jp}にいます。`, `They are at the ${p.en} now.`, '現在進行形'),
   ),

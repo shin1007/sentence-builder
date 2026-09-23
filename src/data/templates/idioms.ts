@@ -247,9 +247,9 @@ const EIKEN3: Idiom[] = [
     meaning: '〜のために・〜のせいで',
     note: GROUP_PREP,
     sentences: [
-      { jp: '雨のために試合は中止されました。', en: 'The game was canceled [because of] the rain.' },
+      { jp: '雨のために私たちは試合をしませんでした。', en: "We didn't play the game [because of] the rain." },
       { jp: '雪のせいで電車が遅れました。', en: 'The train was late [because of] the snow.' },
-      { jp: '彼はかぜのために学校を休みました。', en: 'He was absent from school [because of] a cold.' },
+      { jp: '彼はかぜのために学校へ行きませんでした。', en: "He didn't go to school [because of] a cold." },
     ],
   },
   {
@@ -270,7 +270,7 @@ const EIKEN_PRE2: Idiom[] = [
     meaning: '〜に参加する',
     note: VERB_IDIOM,
     sentences: [
-      { jp: '私は来月そのマラソンに参加します。', en: 'I will [take part in] the marathon next month.' },
+      { jp: '私は来月その大会に参加します。', en: 'I will [take part in] the race next month.' },
       { jp: '多くの生徒がそのイベントに参加しました。', en: 'Many students [took part in] the event.' },
       { jp: 'あなたはそのコンテストに参加しますか。', en: 'Will you [take part in] the contest?' },
     ],
@@ -548,7 +548,7 @@ const KOUKO_NYUSHI: Idiom[] = [
     sentences: [
       { jp: '大雨のために私たちは家にいました。', en: 'We stayed home [because of] the heavy rain.' },
       { jp: '事故のために道路は閉鎖されていた。', en: 'The road was closed [because of] the accident.' },
-      { jp: '彼は病気のために来られなかった。', en: "He couldn't come [because of] his illness." },
+      { jp: '彼はかぜのために来られなかった。', en: "He couldn't come [because of] his cold." },
     ],
   },
   {

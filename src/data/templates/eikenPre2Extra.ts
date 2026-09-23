@@ -56,7 +56,7 @@ const TELL_ASK_TO_DO: Sentence[] = [
   { jp: '彼らは私たちにチームに入るよう頼みました。', en: 'They asked us to join their team.' },
   { jp: '父は私に遅れないように言いました。', en: 'My father told me not to be late.' },
   { jp: '彼女は店員に水を持ってくるよう頼みました。', en: 'She asked the waiter to bring some water.' },
-  { jp: 'コーチは私たちに10周走るように言いました。', en: 'The coach told us to run ten laps.' },
+  { jp: 'コーチは私たちにもっと速く走るように言いました。', en: 'The coach told us to run faster.' },
 ]
 
 const HELP_DO: Sentence[] = [
