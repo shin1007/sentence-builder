@@ -8,7 +8,8 @@ import { isShakyAnswer, loadDueIds, recordCorrect, recordMiss, recordShaky } fro
 import { MAX_RELEARN_PER_RUN, countScored, insertRelearn, type Relearnable } from '../utils/relearn'
 import { recordFirstTry, recordRecovered, recordMissedOnly } from '../utils/progressStats'
 import { grammarWeights, recordGrammarResult } from '../utils/grammarStats'
-import { speakEnglish, speakJapanese } from '../audio/speech'
+import { isSpeechSupported, speakEnglish, speakJapanese } from '../audio/speech'
+import { grammarLabel } from '../data/grammar'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
 import { QUESTIONS_PER_SESSION, calcStars, timeBonus } from '../utils/scoring'
@@ -103,7 +104,10 @@ export default function GameScreen({
 }) {
   const level = getLevel(levelId)!
   const sound = useSoundContext()
-  const { capitalizeFirst, practiceMode, retryOnMiss } = useSettingsContext()
+  const { capitalizeFirst, practiceMode, retryOnMiss, listeningMode } = useSettingsContext()
+  // With sound off (or no speech engine) there'd be nothing to listen to, so
+  // the question falls back to the Japanese prompt.
+  const listening = listeningMode && sound.sfxOn && isSpeechSupported()
 
   const isEndless = mode === 'endless' && !focus
 
@@ -157,6 +161,9 @@ export default function GameScreen({
   // True for the brief window after the last tile lands but before it's
   // actually scored in advance mode.
   const [awaitingConfirm, setAwaitingConfirm] = useState(false)
+  /** A wrong tile was tapped on this question, so its hint is showing (see
+   * handleTrayTap). */
+  const [hintShown, setHintShown] = useState(false)
 
   const lastTickSecond = useRef(-1)
   const advanceTimer = useRef<number | null>(null)
@@ -243,6 +250,7 @@ export default function GameScreen({
     missedThisQuestion.current = false
     removalsThisQuestion.current = 0
     setShaky(false)
+    setHintShown(false)
     const q = questions[qIndex]
     setTray(buildTiles(q))
     setSlots(new Array(q.words.length).fill(null))
@@ -253,13 +261,19 @@ export default function GameScreen({
     lastTickSecond.current = -1
   }, [qIndex, questions, level, cancelPendingCheck])
 
-  // The countdown shouldn't start ticking while the Japanese prompt is still
-  // being read aloud, so wait for that playback to finish before arming it.
+  // The countdown shouldn't start ticking while the prompt is still being
+  // read aloud (the Japanese one, or in listening mode the English sentence
+  // itself), so wait for that playback to finish before arming it.
   const [timerReady, setTimerReady] = useState(false)
   useEffect(() => {
     let cancelled = false
     setTimerReady(false)
-    const done = sound.sfxOn ? speakJapanese(questions[qIndex].jp) : Promise.resolve()
+    const q = questions[qIndex]
+    const done = listening
+      ? speakEnglish(q.words.join(' '))
+      : sound.sfxOn
+        ? speakJapanese(q.jp)
+        : Promise.resolve()
     done.then(() => {
       if (!cancelled) setTimerReady(true)
     })
@@ -589,6 +603,10 @@ export default function GameScreen({
         // 間違えた単語をタップした瞬間に赤枠＆シェイクで通知！
         setErrorTileUid(tile.uid)
         missedThisQuestion.current = true
+        // Before handing over the answer, point at the grammar it turns on
+        // (and in listening mode, what the sentence means) so the player has
+        // something to work the next word out from, not just to copy.
+        setHintShown(true)
         sound.wrong()
         recordOutcome(question, false)
         // Read the correct sentence aloud as a hint: hearing the whole thing
@@ -696,6 +714,7 @@ export default function GameScreen({
             {`${level.icon} ${level.title}`}
             {focus && ` ${focusLabel(focus)}`}
             {practiceMode && ` 🧪`}
+            {listening && ` 🎧`}
           </span>
           <span className={styles.progress}>
             {question.relearn
@@ -752,9 +771,15 @@ export default function GameScreen({
 
         <div className={styles.promptArea}>
           <div className={styles.jpRow}>
-            <p className={styles.jpText}>{question.jp}</p>
+            {/* In listening mode the meaning stays hidden until the question
+                is answered, or a wrong tile earns a hint. */}
+            {listening && status === 'playing' && !hintShown ? (
+              <p className={`${styles.jpText} ${styles.jpHidden}`}>🎧 英語を聞いて ならべよう</p>
+            ) : (
+              <p className={styles.jpText}>{question.jp}</p>
+            )}
             <button className={styles.speakButton} onClick={handleListen} aria-label="英語を再生する">
-              🔊 英語を再生
+              {listening ? '🔊 もう一度聞く' : '🔊 英語を再生'}
             </button>
           </div>
           {question.source && (
@@ -770,6 +795,11 @@ export default function GameScreen({
               <p className={`${styles.note} ${styles.noteWrong}`}>正解: {question.words.join(' ')}</p>
               {question.note && <span className={styles.note}>{question.note}</span>}
             </>
+          )}
+          {status === 'playing' && hintShown && (question.grammar || question.note) && (
+            <span className={`${styles.note} ${styles.noteHint}`}>
+              💡 ヒント: {question.grammar ? grammarLabel(question.grammar) : question.note}
+            </span>
           )}
           {status === 'rebuild' && <p className={styles.note}>✍️ 正しい順番で ならべてみよう</p>}
           {status === 'rebuilt' && <p className={styles.note}>👍 できた！</p>}
