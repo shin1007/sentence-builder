@@ -280,6 +280,50 @@ export const GRAMMAR_BY_ID = Object.fromEntries(GRAMMAR_ITEMS.map((item) => [ite
 export const grammarLabel = (id: GrammarId): string => GRAMMAR_BY_ID[id].label
 
 /**
+ * Grammar points that are easy to mix up when building a sentence: the
+ * Japanese reads much the same, but the English word order differs
+ * (「〜している男の子」 is `the boy playing …` or `the boy who is playing …`;
+ * 「〜したことがある」 vs 「〜した」 picks between `have + 過去分詞` and the past
+ * form). A grammar practice run mixes these in after a short blocked start
+ * (see pickGrammarQuestions), so the player has to decide which structure the
+ * sentence needs rather than repeating one pattern ten times in a row.
+ */
+const CONTRAST_GROUPS: readonly (readonly GrammarId[])[] = [
+  // 名詞を後ろから説明する形
+  ['participlePresentModifier', 'participlePastModifier', 'relativeWho', 'relativeWhich', 'relativeThat', 'prepPhraseModifier'],
+  ['relativeObject', 'relativeOmitted', 'participlePastModifier'],
+  // 現在完了と過去形
+  ['presentPerfectExperience', 'presentPerfectCompletion', 'presentPerfectContinuation', 'pastSimple', 'pastIrregular'],
+  // 程度・結果
+  ['tooToDo', 'enoughToDo', 'soThat'],
+  // 比較
+  ['comparativeEr', 'comparativeMore', 'asAs', 'notAsAs', 'superlativeEst', 'superlativeMost'],
+  // 不定詞の用法
+  ['infinitiveNoun', 'infinitiveAdjective', 'infinitivePurpose', 'infinitiveEmotion'],
+  // 目的語のあとに動詞が続く形
+  ['wantObjectTo', 'tellAskObjectTo', 'causativeMake', 'causativeLet', 'causativeHave', 'helpDo'],
+  // 目的語を2つとる形・補語をとる形
+  ['svooGive', 'svooFor', 'svooAskTeach', 'svocCall', 'svocMake'],
+  // 疑問文の語順と、文の中に入った疑問詞の語順
+  ['indirectQuestion', 'whatQuestion', 'whereQuestion', 'whenQuestion', 'whyQuestion', 'howQuestion', 'whToInfinitive'],
+  // 「〜することは」
+  ['gerundSubject', 'itIsToDo'],
+  // 受動態と、過去分詞で名詞を説明する形
+  ['passivePresent', 'passivePast', 'participlePastModifier'],
+  // 仮定法
+  ['subjunctivePast', 'subjunctivePastPerfect', 'iWish', 'asIfClause'],
+]
+
+/** The grammar points worth mixing into a practice run on `id`. */
+export function contrastingGrammar(id: GrammarId): GrammarId[] {
+  const out = new Set<GrammarId>()
+  for (const group of CONTRAST_GROUPS) {
+    if (group.includes(id)) for (const other of group) if (other !== id) out.add(other)
+  }
+  return [...out]
+}
+
+/**
  * Notes are hand-written per template, so the same point is spelled a few
  * different ways. Fold the variations that carry no meaning — full-width vs
  * ASCII tilde, stray whitespace — before looking a note up.

@@ -4,11 +4,12 @@ import { pickGrammarQuestions, pickQuestions, pickReviewQuestions, questionsById
 import { useSoundContext } from '../context/sound'
 import { useSettingsContext } from '../context/settings'
 import { saveBestResultIfBetter } from '../utils/storage'
-import { isShakyAnswer, loadDueIds, recordCorrect, recordMiss, recordShaky } from '../utils/reviewQueue'
+import { isShakyAnswer, loadDueIds, recordCorrect, recordMiss, recordReviewRecall, recordShaky } from '../utils/reviewQueue'
 import { MAX_RELEARN_PER_RUN, countScored, insertRelearn, type Relearnable } from '../utils/relearn'
 import { recordFirstTry, recordRecovered, recordMissedOnly } from '../utils/progressStats'
 import { grammarWeights, recordGrammarResult } from '../utils/grammarStats'
 import { answerUnits, recordIdiomResult, shouldChunkIdiom } from '../utils/idiomProgress'
+import { acceptedOrders, fitsSomeOrder, isAccepted, misplacedSlots, splitFinalPunct } from '../utils/answerCheck'
 import { isSpeechSupported, speakEnglish, speakJapanese } from '../audio/speech'
 import { grammarLabel } from '../data/grammar'
 import { WordTile, AnswerSlot } from './WordTile'
@@ -49,10 +50,21 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-/** The tiles for one question: normally a word each, but a chunked idiom is
- * a single tile (see answerUnits). */
-function unitsFor(question: Question): string[] {
-  return answerUnits(question, shouldChunkIdiom(question))
+interface Answer {
+  /** The tiles in written order: normally a word each, but a chunked idiom
+   * is a single tile (see answerUnits). The sentence-final mark is not on
+   * any tile — it's shown after the slots (see utils/answerCheck.ts). */
+  units: string[]
+  /** The sentence-final `.`, `?` or `!`. */
+  punct: string
+  /** Every tile order that counts as correct; the first is `units`. */
+  orders: string[][]
+}
+
+function answerFor(question: Question): Answer {
+  const withPunct = answerUnits(question, shouldChunkIdiom(question))
+  const { units, punct } = splitFinalPunct(withPunct)
+  return { units, punct, orders: acceptedOrders(question.words, withPunct) }
 }
 
 function buildTiles(units: string[]): Tile[] {
@@ -143,7 +155,8 @@ export default function GameScreen({
 
   /** The answer as the player builds it, one entry per tile. Decided when the
    * question comes up so progress booked mid-question can't reshape it. */
-  const [units, setUnits] = useState<string[]>(() => unitsFor(questions[0]))
+  const [answer, setAnswer] = useState<Answer>(() => answerFor(questions[0]))
+  const units = answer.units
   const [tray, setTray] = useState<Tile[]>(() => buildTiles(units))
   const [slots, setSlots] = useState<(Tile | null)[]>(() => new Array(units.length).fill(null))
 
@@ -274,8 +287,9 @@ export default function GameScreen({
     setShaky(false)
     setHintShown(false)
     const q = questions[qIndex]
-    const nextUnits = unitsFor(q)
-    setUnits(nextUnits)
+    const nextAnswer = answerFor(q)
+    const nextUnits = nextAnswer.units
+    setAnswer(nextAnswer)
     setTray(buildTiles(nextUnits))
     setSlots(new Array(nextUnits.length).fill(null))
     setStatus('playing')
@@ -448,6 +462,7 @@ export default function GameScreen({
         setCorrectCount(nextCorrect)
         setScorePop({ id: popIdRef.current++, value: gained })
         sound.correct()
+        if (!questionOutcome.current.has(question.id)) recordReviewRecall(levelId, question.id, true)
         if (wasShaky) recordShaky(levelId, question.id)
         else recordCorrect(levelId, question.id)
         // A hesitant answer doesn't show the idiom has stuck, so it leaves
@@ -471,6 +486,7 @@ export default function GameScreen({
           nextLives = practiceMode ? lives : lives - 1
           setCombo(0)
           setLives(nextLives)
+          if (!questionOutcome.current.has(question.id)) recordReviewRecall(levelId, question.id, false)
           recordMiss(levelId, question.id)
           // A wrong tile on this question already counted against the idiom.
           if (!missedThisQuestion.current) recordIdiomResult(question, false)
@@ -627,9 +643,9 @@ export default function GameScreen({
     }
 
     if (retryOnMiss) {
-      // 即時判定モード: タップした単語がこのスロットの正解と一致するか判定
-      const expectedWord = units[emptyIndex]
-      if (tile.word !== expectedWord) {
+      // 即時判定モード: この単語を置いても、正解のどれかの並びと食い違わないか判定
+      const tried = slots.map((s, i) => (i === emptyIndex ? tile.word : (s?.word ?? null)))
+      if (!fitsSomeOrder(tried, answer.orders)) {
         // 間違えた単語をタップした瞬間に赤枠＆シェイクで通知！
         setErrorTileUid(tile.uid)
         // Only the first wrong tile on a question counts against the idiom,
@@ -641,6 +657,11 @@ export default function GameScreen({
         // something to work the next word out from, not just to copy.
         setHintShown(true)
         sound.wrong()
+        // Booked before recordOutcome/recordMiss move things on: only the
+        // first result on a question that came up due counts as recall.
+        if (!question.relearn && !questionOutcome.current.has(question.id)) {
+          recordReviewRecall(levelId, question.id, false)
+        }
         recordOutcome(question, false)
         // Read the correct sentence aloud as a hint: hearing the whole thing
         // in order is often enough to spot which word comes next, and it
@@ -685,8 +706,7 @@ export default function GameScreen({
       sound.place()
 
       if (nextSlots.every((s) => s !== null)) {
-        const built = nextSlots.map((s) => (s as Tile).word).join(' ')
-        const isCorrect = built === question.words.join(' ')
+        const isCorrect = isAccepted(nextSlots.map((s) => (s as Tile).word), answer.orders)
         setAwaitingConfirm(true)
         const timerId = window.setTimeout(() => {
           pendingCheck.current = null
@@ -718,6 +738,10 @@ export default function GameScreen({
     setSlots(nextSlots)
     sound.remove()
   }
+
+  // Only the tiles that would have to move, not everything after the first
+  // slip (see misplacedSlots).
+  const misplaced = status === 'wrong' ? misplacedSlots(slots.map((s) => s?.word ?? ''), answer.orders) : null
 
   const timerPct = (timeLeft / timeLimit) * 100
   const timerClass = timeLeft <= 4 ? 'urgent' : timeLeft <= timeLimit * 0.4 ? 'warn' : ''
@@ -854,10 +878,15 @@ export default function GameScreen({
                 displayWord={tile ? displayFor(tile, capitalizeFirst) : undefined}
                 colorIndex={tile ? tile.uid : i}
                 position={i + 1}
-                mismatch={status === 'wrong' && !!tile && tile.word !== units[i]}
+                mismatch={!!misplaced?.[i] && !!tile}
                 onClick={() => handleSlotTap(i)}
               />
             ))}
+            {answer.punct && (
+              <span className={styles.endPunct} aria-hidden="true">
+                {answer.punct}
+              </span>
+            )}
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import type { LevelId, Question } from '../types'
-import { grammarIdForNote, type GrammarId } from './grammar'
+import { contrastingGrammar, grammarIdForNote, type GrammarId } from './grammar'
 import { REMOVED_QUESTION_IDS } from './removedQuestions'
 import { eiken4Questions } from './templates/eiken4'
 import { eiken4ExtraQuestions } from './templates/eiken4Extra'
@@ -197,9 +197,45 @@ export function countDueQuestions(levelId: LevelId, dueIds: readonly string[]): 
   return questionsByIds(levelId, dueIds).length
 }
 
-/** Questions for a practice run on one grammar point within a level. */
+/** Questions on the drilled point that open a grammar practice run before
+ * anything else is mixed in: a short blocked start to settle the pattern. */
+export const GRAMMAR_BLOCKED_LEAD = 3
+
+/**
+ * Questions for a practice run on one grammar point within a level.
+ *
+ * Ten in a row on the same point can be solved by repeating one pattern
+ * without ever deciding it's the right one. So after GRAMMAR_BLOCKED_LEAD
+ * questions on the point, every other question is from a grammar point that's
+ * easily confused with it (see contrastingGrammar) — 3 in a run of 10 — and
+ * the player has to tell which structure each sentence needs. With no
+ * contrasting questions in the level, the run is all on the point, as before.
+ */
 export function pickGrammarQuestions(levelId: LevelId, grammar: GrammarId, count: number): Question[] {
-  return shuffle(QUESTIONS_BY_GRAMMAR[levelId][grammar] ?? []).slice(0, count)
+  const target = shuffle(QUESTIONS_BY_GRAMMAR[levelId][grammar] ?? [])
+  const byGrammar = QUESTIONS_BY_GRAMMAR[levelId]
+  // Round-robin over the contrasting points so one big bank doesn't crowd
+  // the others out.
+  const pools = shuffle(contrastingGrammar(grammar))
+    .map((id) => shuffle(byGrammar[id] ?? []))
+    .filter((pool) => pool.length > 0)
+  const contrast: Question[] = []
+  for (let i = 0; pools.some((pool) => i < pool.length); i++) {
+    for (const pool of pools) if (i < pool.length) contrast.push(pool[i])
+  }
+
+  const picked: Question[] = []
+  let t = 0
+  let c = 0
+  // Ends with the drilled point's own questions: contrast is mixed in, never
+  // used to pad out a point with only a few questions.
+  while (picked.length < count && t < target.length) {
+    const afterLead = picked.length >= GRAMMAR_BLOCKED_LEAD
+    const wantContrast = afterLead && (picked.length - GRAMMAR_BLOCKED_LEAD) % 2 === 1
+    if (wantContrast && c < contrast.length) picked.push(contrast[c++])
+    else picked.push(target[t++])
+  }
+  return picked
 }
 
 /** Looks questions up by id in a level, in the order given, skipping unknown ids. */

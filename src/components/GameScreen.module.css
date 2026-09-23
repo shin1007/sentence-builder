@@ -491,3 +491,14 @@
     animation: none;
   }
 }
+
+/* The sentence-final mark, kept off the tiles so it doesn't give away which
+ * word goes last (see utils/answerCheck.ts). */
+.endPunct {
+  font-size: 7cqh;
+  line-height: 1;
+  font-weight: 900;
+  color: #fff;
+  align-self: flex-end;
+  margin-left: -0.6cqh;
+}

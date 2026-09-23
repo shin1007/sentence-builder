@@ -4,6 +4,7 @@ import { useSoundContext } from '../context/sound'
 import { getLevel } from '../data/levels'
 import { grammarLabel, type GrammarId } from '../data/grammar'
 import { QUESTIONS_BY_GRAMMAR } from '../data/questions'
+import { loadRetention, resetRetention } from '../utils/reviewQueue'
 import { useState } from 'react'
 import type { LevelId } from '../types'
 import styles from './ProgressScreen.module.css'
@@ -21,6 +22,7 @@ export default function ProgressScreen({
   const [weak, setWeak] = useState(() =>
     loadWeakGrammar().filter((stat) => (QUESTIONS_BY_GRAMMAR[stat.levelId][stat.grammar]?.length ?? 0) > 0),
   )
+  const [retention, setRetention] = useState(() => loadRetention())
   const [confirmReset, setConfirmReset] = useState(false)
 
   const total = rec.totalAnswered
@@ -35,6 +37,8 @@ export default function ProgressScreen({
     }
     resetProgress()
     resetGrammarStats()
+    resetRetention()
+    setRetention([])
     setRec(loadProgressRecord())
     setWeak([])
     setConfirmReset(false)
@@ -184,6 +188,35 @@ export default function ProgressScreen({
               </ul>
             )}
           </section>
+
+          {retention.length > 0 && (
+            <section className={styles.weakSection} aria-labelledby="retention-heading">
+              <h3 id="retention-heading" className={styles.weakHeading}>
+                🧠 復習で思い出せた割合
+              </h3>
+              <ul className={styles.weakList}>
+                {retention.map((bucket) => {
+                  const pct = Math.round((bucket.correct / bucket.attempts) * 100)
+                  return (
+                    <li key={bucket.step} className={styles.weakRow}>
+                      <div className={styles.weakLabelGroup}>
+                        <span className={styles.weakLabel}>
+                          {bucket.intervalDays === 0 ? '間違えた次の回' : `${bucket.intervalDays}日あけて`}
+                        </span>
+                        <span className={styles.weakLevel}>
+                          {bucket.correct}/{bucket.attempts}問
+                        </span>
+                      </div>
+                      <div className={styles.barTrack}>
+                        <div className={`${styles.barFill} ${styles.barFirst}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className={styles.barPct}>{pct}%</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          )}
 
           <div className={styles.message}>
             {rec.firstTry + rec.recovered > 0 && (

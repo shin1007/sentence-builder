@@ -149,3 +149,75 @@ export function recordShaky(levelId: LevelId, questionId: string, now = Date.now
   rest.push({ id: questionId, step, dueAt: now + REVIEW_STEP_DAYS[step] * DAY_MS })
   writeItems(levelId, rest.slice(-MAX_TRACKED))
 }
+
+const RETENTION_KEY = 'wordrush.retention'
+
+/** Recall results for questions that came up because they were due for
+ * review, per review step. */
+export interface RetentionBucket {
+  /** Index into REVIEW_STEP_DAYS the question was at when it came due. */
+  step: number
+  /** Days between being scheduled and coming due (0: the next run after a miss). */
+  intervalDays: number
+  attempts: number
+  correct: number
+}
+
+type RetentionRecord = Record<string, { attempts: number; correct: number }>
+
+function readRetention(): RetentionRecord {
+  try {
+    const raw = localStorage.getItem(RETENTION_KEY)
+    if (!raw) return {}
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
+    const out: RetentionRecord = {}
+    for (const [step, value] of Object.entries(parsed)) {
+      const v = value as { attempts?: unknown; correct?: unknown }
+      if (typeof v?.attempts === 'number' && typeof v?.correct === 'number') {
+        out[step] = { attempts: v.attempts, correct: v.correct }
+      }
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Books whether a question that was due for review was recalled — its first
+ * result in a run, before the queue moves it. Nothing else says whether the
+ * spacing (REVIEW_STEP_DAYS) actually works: if recall after 7 days is poor,
+ * the gaps are too wide; if it's near perfect everywhere, they could be
+ * wider. A question that isn't due (or isn't queued) is ignored, so ordinary
+ * answers don't dilute the figure.
+ */
+export function recordReviewRecall(levelId: LevelId, questionId: string, correct: boolean, now = Date.now()) {
+  const item = readItems(levelId).find((entry) => entry.id === questionId)
+  if (!item || item.dueAt > now) return
+  const record = readRetention()
+  const bucket = record[item.step] ?? { attempts: 0, correct: 0 }
+  record[item.step] = { attempts: bucket.attempts + 1, correct: bucket.correct + (correct ? 1 : 0) }
+  try {
+    localStorage.setItem(RETENTION_KEY, JSON.stringify(record))
+  } catch {
+    /* storage unavailable — the figure just won't persist */
+  }
+}
+
+/** Recall per review step, shortest interval first; steps never reached are left out. */
+export function loadRetention(): RetentionBucket[] {
+  const record = readRetention()
+  return REVIEW_STEP_DAYS.flatMap((intervalDays, step) => {
+    const bucket = record[step]
+    return bucket && bucket.attempts > 0 ? [{ step, intervalDays, ...bucket }] : []
+  })
+}
+
+export function resetRetention() {
+  try {
+    localStorage.removeItem(RETENTION_KEY)
+  } catch {
+    /* nothing to clear */
+  }
+}
