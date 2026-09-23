@@ -124,6 +124,33 @@ describe('pickQuestions', () => {
     const ids = pickQuestions(levelId, 10, due.map((question) => question.id), weights).map((question) => question.id)
     for (const question of due) expect(ids).toContain(question.id)
   })
+
+  it('draws recently solved sentences far less often, but still fills a session from them', () => {
+    const levelId: LevelId = 'eiken4'
+    const pool = QUESTIONS[levelId]
+    const solved = new Set(pool.slice(0, Math.floor(pool.length / 2)).map((question) => question.id))
+    let solvedCount = 0
+    for (let i = 0; i < 200; i++) {
+      solvedCount += pickQuestions(levelId, 10, [], {}, solved).filter((question) => solved.has(question.id)).length
+    }
+    // Half the pool is solved, so a blind draw would give about 1,000 of them.
+    expect(solvedCount).toBeLessThan(300)
+
+    const allSolved = new Set(pool.map((question) => question.id))
+    expect(pickQuestions(levelId, 10, [], {}, allSolved)).toHaveLength(10)
+  })
+
+  it('pairs a review question with a sibling not recently solved when there is one', () => {
+    const levelId: LevelId = 'eiken4'
+    const [grammar, questions] = Object.entries(QUESTIONS_BY_GRAMMAR[levelId]).find(([, qs]) => qs!.length >= 3)!
+    const [due, fresh, ...rest] = questions!
+    const solved = new Set(rest.map((question) => question.id))
+    for (let i = 0; i < 20; i++) {
+      const picked = pickReviewQuestions(levelId, [due.id], 10, solved)
+      expect(picked.map((question) => question.id).sort()).toEqual([due.id, fresh.id].sort())
+      expect(picked.every((question) => question.grammar === grammar)).toBe(true)
+    }
+  })
 })
 
 describe('pickReviewQuestions', () => {
@@ -178,6 +205,15 @@ describe('pickGrammarQuestions', () => {
     const picked = pickGrammarQuestions(levelId, 'presentPerfectExperience', 10)
     expect(picked).toHaveLength(10)
     expect(picked.filter((question) => question.grammar !== 'presentPerfectExperience')).toHaveLength(3)
+  })
+
+  it('serves sentences not recently solved before ones that were', () => {
+    const levelId: LevelId = 'eiken4'
+    const questions = QUESTIONS_BY_GRAMMAR[levelId].beCopula!
+    const solved = new Set(questions.slice(0, questions.length - 5).map((question) => question.id))
+    const picked = pickGrammarQuestions(levelId, 'beCopula', 10, solved)
+    expect(picked.slice(0, 5).some((question) => solved.has(question.id))).toBe(false)
+    expect(picked.slice(5).every((question) => solved.has(question.id))).toBe(true)
   })
 
   it('is all on the point when nothing in the level contrasts with it', () => {

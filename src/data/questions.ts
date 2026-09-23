@@ -1,6 +1,7 @@
 import type { LevelId, Question } from '../types'
 import { contrastingGrammar, grammarIdForNote, type GrammarId } from './grammar'
 import { REMOVED_QUESTION_IDS } from './removedQuestions'
+import { RECENTLY_SOLVED_WEIGHT } from '../utils/solvedQuestions'
 import { eiken4Questions } from './templates/eiken4'
 import { eiken4ExtraQuestions } from './templates/eiken4Extra'
 import { eiken3Questions } from './templates/eiken3'
@@ -96,7 +97,7 @@ export function grammarCoverage(): Map<GrammarId, number> {
   return counts
 }
 
-function shuffle<T>(items: T[]): T[] {
+function shuffle<T>(items: readonly T[]): T[] {
   const shuffled = [...items]
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
@@ -124,6 +125,19 @@ function weightedShuffle<T>(items: readonly T[], weightOf: (item: T) => number):
 }
 
 /**
+ * Shuffles, then moves sentences in `recentlySolved` (see
+ * utils/solvedQuestions.ts) behind the rest, so a sentence the player just
+ * answered cleanly is only served once the fresh ones run out.
+ */
+function freshFirst(questions: readonly Question[], recentlySolved: ReadonlySet<string>): Question[] {
+  const shuffled = shuffle(questions)
+  return [
+    ...shuffled.filter((question) => !recentlySolved.has(question.id)),
+    ...shuffled.filter((question) => recentlySolved.has(question.id)),
+  ]
+}
+
+/**
  * The review questions among `priorityIds` found in this level, each followed
  * by one *other* sentence drilling the same grammar point.
  *
@@ -131,9 +145,15 @@ function weightedShuffle<T>(items: readonly T[], weightOf: (item: T) => number):
  * by remembering that sentence's tile order; a sibling on the same point
  * checks the grammar has actually stuck. They're interleaved so that, when
  * there's more review due than fits, a session still covers pairs rather than
- * spending every slot on repeats and none on siblings.
+ * spending every slot on repeats and none on siblings. The sibling is one the
+ * player hasn't recently solved where possible, since a sentence they've just
+ * answered could again be passed from memory.
  */
-function reviewWithSiblings(levelId: LevelId, priorityIds: readonly string[]): Question[] {
+function reviewWithSiblings(
+  levelId: LevelId,
+  priorityIds: readonly string[],
+  recentlySolved: ReadonlySet<string>,
+): Question[] {
   const prioritySet = new Set(priorityIds)
   const priority = shuffle(QUESTIONS[levelId].filter((question) => prioritySet.has(question.id)))
   const chosen = new Set(priority.map((question) => question.id))
@@ -142,7 +162,7 @@ function reviewWithSiblings(levelId: LevelId, priorityIds: readonly string[]): Q
   for (const question of priority) {
     review.push(question)
     const sameGrammar = question.grammar ? (QUESTIONS_BY_GRAMMAR[levelId][question.grammar] ?? []) : []
-    const sibling = shuffle(sameGrammar).find((candidate) => !chosen.has(candidate.id))
+    const sibling = freshFirst(sameGrammar, recentlySolved).find((candidate) => !chosen.has(candidate.id))
     if (sibling) {
       review.push(sibling)
       chosen.add(sibling.id)
@@ -161,7 +181,10 @@ function reviewWithSiblings(levelId: LevelId, priorityIds: readonly string[]): Q
  * The rest of the session is drawn at random, weighted by `grammarWeights`, so
  * that grammar the player keeps missing comes up more often and grammar
  * they've clearly got comes up less, instead of every point getting equal
- * time. Priority questions aren't clustered at the front of the session; the
+ * time. Sentences in `recentlySolved` — answered cleanly not long ago — are
+ * drawn at RECENTLY_SOLVED_WEIGHT on top of that, so a session goes to
+ * sentences the player hasn't mastered rather than ones they already have.
+ * Priority questions aren't clustered at the front of the session; the
  * final order is shuffled.
  */
 export function pickQuestions(
@@ -169,14 +192,17 @@ export function pickQuestions(
   count: number,
   priorityIds: readonly string[] = [],
   grammarWeights: GrammarWeights = {},
+  recentlySolved: ReadonlySet<string> = new Set(),
 ): Question[] {
   const pool = QUESTIONS[levelId]
-  const review = reviewWithSiblings(levelId, priorityIds)
+  const review = reviewWithSiblings(levelId, priorityIds, recentlySolved)
   const chosen = new Set(review.map((question) => question.id))
 
   const rest = weightedShuffle(
     pool.filter((question) => !chosen.has(question.id)),
-    (question) => (question.grammar ? (grammarWeights[question.grammar] ?? 1) : 1),
+    (question) =>
+      (question.grammar ? (grammarWeights[question.grammar] ?? 1) : 1) *
+      (recentlySolved.has(question.id) ? RECENTLY_SOLVED_WEIGHT : 1),
   )
   const ordered = [...review, ...rest].slice(0, Math.min(count, pool.length))
   return shuffle(ordered)
@@ -186,8 +212,13 @@ export function pickQuestions(
  * Questions for a dedicated review run: only what's due (`dueIds`) and each
  * one's same-grammar sibling, capped at `count`. Empty when nothing is due.
  */
-export function pickReviewQuestions(levelId: LevelId, dueIds: readonly string[], count: number): Question[] {
-  return shuffle(reviewWithSiblings(levelId, dueIds).slice(0, count))
+export function pickReviewQuestions(
+  levelId: LevelId,
+  dueIds: readonly string[],
+  count: number,
+  recentlySolved: ReadonlySet<string> = new Set(),
+): Question[] {
+  return shuffle(reviewWithSiblings(levelId, dueIds, recentlySolved).slice(0, count))
 }
 
 /** How many of `dueIds` still exist in this level's bank — the review count
@@ -210,14 +241,20 @@ export const GRAMMAR_BLOCKED_LEAD = 3
  * easily confused with it (see contrastingGrammar) — 3 in a run of 10 — and
  * the player has to tell which structure each sentence needs. With no
  * contrasting questions in the level, the run is all on the point, as before.
+ * Within each grammar point, sentences not recently solved come first.
  */
-export function pickGrammarQuestions(levelId: LevelId, grammar: GrammarId, count: number): Question[] {
-  const target = shuffle(QUESTIONS_BY_GRAMMAR[levelId][grammar] ?? [])
+export function pickGrammarQuestions(
+  levelId: LevelId,
+  grammar: GrammarId,
+  count: number,
+  recentlySolved: ReadonlySet<string> = new Set(),
+): Question[] {
+  const target = freshFirst(QUESTIONS_BY_GRAMMAR[levelId][grammar] ?? [], recentlySolved)
   const byGrammar = QUESTIONS_BY_GRAMMAR[levelId]
   // Round-robin over the contrasting points so one big bank doesn't crowd
   // the others out.
   const pools = shuffle(contrastingGrammar(grammar))
-    .map((id) => shuffle(byGrammar[id] ?? []))
+    .map((id) => freshFirst(byGrammar[id] ?? [], recentlySolved))
     .filter((pool) => pool.length > 0)
   const contrast: Question[] = []
   for (let i = 0; pools.some((pool) => i < pool.length); i++) {
