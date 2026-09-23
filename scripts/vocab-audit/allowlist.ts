@@ -150,6 +150,14 @@ export const ALLOWED_WORDS: Record<string, Allowed> = {
   trash: JHS, // take out the trash
   lift: JHS,
   rest: JHS,
+  send: JHS,
+  fresh: JHS,
+  diary: JHS,
+  voice: JHS,
+  fall: JHS, // the season
+  stamp: JHS,
+  stair: JHS,
+  someday: JHS,
 
   // その級で出題される話題の語
   environment: exam('eikenPre2', 'eiken2'),
