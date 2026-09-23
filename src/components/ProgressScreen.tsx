@@ -1,11 +1,26 @@
 import { loadProgressRecord, resetProgress } from '../utils/progressStats'
+import { loadWeakGrammar, MIN_ATTEMPTS_FOR_RANKING, resetGrammarStats } from '../utils/grammarStats'
 import { useSoundContext } from '../context/sound'
+import { getLevel } from '../data/levels'
+import { grammarLabel, type GrammarId } from '../data/grammar'
+import { QUESTIONS_BY_GRAMMAR } from '../data/questions'
 import { useState } from 'react'
+import type { LevelId } from '../types'
 import styles from './ProgressScreen.module.css'
 
-export default function ProgressScreen({ onBack }: { onBack: () => void }) {
+export default function ProgressScreen({
+  onBack,
+  onPracticeGrammar,
+}: {
+  onBack: () => void
+  onPracticeGrammar: (levelId: LevelId, grammar: GrammarId) => void
+}) {
   const sound = useSoundContext()
   const [rec, setRec] = useState(() => loadProgressRecord())
+  // Only points that still have questions in their level can be drilled.
+  const [weak, setWeak] = useState(() =>
+    loadWeakGrammar().filter((stat) => (QUESTIONS_BY_GRAMMAR[stat.levelId][stat.grammar]?.length ?? 0) > 0),
+  )
   const [confirmReset, setConfirmReset] = useState(false)
 
   const total = rec.totalAnswered
@@ -19,7 +34,9 @@ export default function ProgressScreen({ onBack }: { onBack: () => void }) {
       return
     }
     resetProgress()
+    resetGrammarStats()
     setRec(loadProgressRecord())
+    setWeak([])
     setConfirmReset(false)
     sound.click()
   }
@@ -125,6 +142,48 @@ export default function ProgressScreen({ onBack }: { onBack: () => void }) {
           <p className={styles.stackedNote}>
             ✅ 最初から正解 &nbsp;／&nbsp; 🔄 間違えてから正解 &nbsp;／&nbsp; ❌ 正解できなかった
           </p>
+
+          <section className={styles.weakSection} aria-labelledby="weak-heading">
+            <h3 id="weak-heading" className={styles.weakHeading}>
+              🎯 にがてな文法
+            </h3>
+            {weak.length === 0 ? (
+              <p className={styles.weakEmpty}>
+                同じ文法を{MIN_ATTEMPTS_FOR_RANKING}問以上解くと、ここに にがてな文法が出てきます。
+              </p>
+            ) : (
+              <ul className={styles.weakList}>
+                {weak.map((stat) => {
+                  const pct = Math.round(stat.accuracy * 100)
+                  const level = getLevel(stat.levelId)!
+                  return (
+                    <li key={`${stat.levelId}:${stat.grammar}`} className={styles.weakRow}>
+                      <div className={styles.weakLabelGroup}>
+                        <span className={styles.weakLabel}>{grammarLabel(stat.grammar)}</span>
+                        <span className={styles.weakLevel}>
+                          {level.icon} {level.title}・{stat.correct}/{stat.attempts}問
+                        </span>
+                      </div>
+                      <div className={styles.barTrack}>
+                        <div className={`${styles.barFill} ${styles.barWeak}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className={styles.barPct}>{pct}%</span>
+                      <button
+                        className={styles.practiceButton}
+                        onClick={() => {
+                          sound.click()
+                          onPracticeGrammar(stat.levelId, stat.grammar)
+                        }}
+                        aria-label={`${grammarLabel(stat.grammar)}を練習する`}
+                      >
+                        練習する
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </section>
 
           <div className={styles.message}>
             {rec.firstTry + rec.recovered > 0 && (

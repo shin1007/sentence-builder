@@ -288,3 +288,82 @@
 .backButton:active {
   transform: scale(0.9);
 }
+
+/* ── Weak grammar ────────────────────────── */
+.weakSection {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 1cqh;
+  padding: 1.4cqh 2cqh;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.weakHeading {
+  margin: 0;
+  font-size: clamp(0.85rem, 2.4cqh, 1.15rem);
+  font-weight: 900;
+}
+
+.weakEmpty {
+  margin: 0;
+  font-size: clamp(0.65rem, 1.7cqh, 0.85rem);
+  opacity: 0.8;
+}
+
+.weakList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1cqh;
+}
+
+.weakRow {
+  display: flex;
+  align-items: center;
+  gap: 1cqh;
+}
+
+.weakLabelGroup {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 40%;
+  min-width: 0;
+}
+
+.weakLabel {
+  font-size: clamp(0.65rem, 1.8cqh, 0.9rem);
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weakLevel {
+  font-size: clamp(0.55rem, 1.4cqh, 0.72rem);
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.practiceButton {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0.6cqh 1.6cqh;
+  border-radius: 999px;
+  border: none;
+  background: var(--color-accent-yellow);
+  color: #081a10;
+  font-size: clamp(0.65rem, 1.7cqh, 0.85rem);
+  font-weight: 900;
+  box-shadow: 0 3px 0 #b37d00;
+}
+
+.practiceButton:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #b37d00;
+}

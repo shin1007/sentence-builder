@@ -90,14 +90,46 @@ function shuffle<T>(items: T[]): T[] {
  * Picks `count` questions for a session, biased toward `priorityIds` —
  * questions the player previously got wrong on this level (see
  * utils/reviewQueue.ts) — so they resurface instead of only ever seeing a
- * fresh random slice of the pool. Priority questions aren't clustered at
- * the front of the session; the final order is shuffled too.
+ * fresh random slice of the pool.
+ *
+ * Each review question also brings along one *other* sentence drilling the
+ * same grammar point. Replaying only the exact sentence that was missed lets a
+ * player pass review by remembering that sentence's tile order; a sibling on
+ * the same point checks the grammar has actually stuck. Priority questions
+ * aren't clustered at the front of the session; the final order is shuffled.
  */
 export function pickQuestions(levelId: LevelId, count: number, priorityIds: readonly string[] = []): Question[] {
   const pool = QUESTIONS[levelId]
   const prioritySet = new Set(priorityIds)
-  const priority = pool.filter((question) => prioritySet.has(question.id))
-  const rest = pool.filter((question) => !prioritySet.has(question.id))
-  const ordered = [...shuffle(priority), ...shuffle(rest)].slice(0, Math.min(count, pool.length))
+  const priority = shuffle(pool.filter((question) => prioritySet.has(question.id)))
+  const chosen = new Set(priority.map((question) => question.id))
+
+  // Interleave each review question with its sibling so that, when there's
+  // more review due than fits, the session still covers pairs rather than
+  // spending every slot on repeats and none on siblings.
+  const review: Question[] = []
+  for (const question of priority) {
+    review.push(question)
+    const sameGrammar = question.grammar ? (QUESTIONS_BY_GRAMMAR[levelId][question.grammar] ?? []) : []
+    const sibling = shuffle(sameGrammar).find((candidate) => !chosen.has(candidate.id))
+    if (sibling) {
+      review.push(sibling)
+      chosen.add(sibling.id)
+    }
+  }
+
+  const rest = pool.filter((question) => !chosen.has(question.id))
+  const ordered = [...review, ...shuffle(rest)].slice(0, Math.min(count, pool.length))
   return shuffle(ordered)
+}
+
+/** Questions for a practice run on one grammar point within a level. */
+export function pickGrammarQuestions(levelId: LevelId, grammar: GrammarId, count: number): Question[] {
+  return shuffle(QUESTIONS_BY_GRAMMAR[levelId][grammar] ?? []).slice(0, count)
+}
+
+/** Looks questions up by id in a level, in the order given, skipping unknown ids. */
+export function questionsByIds(levelId: LevelId, ids: readonly string[]): Question[] {
+  const byId = new Map(QUESTIONS[levelId].map((question) => [question.id, question]))
+  return ids.flatMap((id) => byId.get(id) ?? [])
 }
