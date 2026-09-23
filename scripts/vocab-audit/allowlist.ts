@@ -175,7 +175,6 @@ export const ALLOWED_WORDS: Record<string, Allowed> = {
   energy: exam('eiken2'),
   species: exam('eiken2'),
   treaty: exam('eiken2'),
-  postpone: exam('eiken2'),
   lower: exam('eiken2'),
   seldom: exam('eiken2'),
   circumstance: exam('eiken2'),
