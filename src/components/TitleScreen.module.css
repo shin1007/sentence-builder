@@ -297,3 +297,22 @@
     animation: none;
   }
 }
+
+.badgeButton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.badgeButton:disabled:active {
+  transform: none;
+}
+
+/* Review waiting: stands out from the neutral badges so it gets noticed. */
+.reviewDue {
+  background: rgba(180, 83, 9, 0.92);
+  border-color: #fde68a;
+}
+
+.reviewDue:hover {
+  background: rgba(194, 95, 12, 0.98);
+}

@@ -188,3 +188,25 @@
   font-weight: 700;
   opacity: 0.75;
 }
+
+.card:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.card:disabled:active {
+  transform: none;
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.3), 0 18px 30px rgba(0, 0, 0, 0.4);
+}
+
+.dueCount {
+  margin: 0.6cqh 0 0;
+  font-size: clamp(0.8rem, 2.2cqh, 1.1rem);
+  font-weight: 900;
+}
+
+.dueNote {
+  margin: 0.2cqh 0 0;
+  font-size: clamp(0.52rem, 1.3cqh, 0.68rem);
+  font-weight: 700;
+}

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getLevel } from '../data/levels'
-import { pickGrammarQuestions, pickQuestions, questionsByIds } from '../data/questions'
+import { pickGrammarQuestions, pickQuestions, pickReviewQuestions, questionsByIds } from '../data/questions'
 import { useSoundContext } from '../context/sound'
 import { useSettingsContext } from '../context/settings'
 import { saveBestResultIfBetter } from '../utils/storage'
 import { loadDueIds, recordCorrect, recordMiss } from '../utils/reviewQueue'
 import { recordFirstTry, recordRecovered, recordMissedOnly } from '../utils/progressStats'
-import { recordGrammarResult } from '../utils/grammarStats'
+import { grammarWeights, recordGrammarResult } from '../utils/grammarStats'
 import { speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
@@ -50,19 +50,33 @@ function buildTiles(question: Question): Tile[] {
 
 /** The very first word is always sentence-capitalized; "I" stays capitalized
  * regardless (it's a mandatory pronoun capital, not a sentence-start hint). */
+/** A normal draw: biased toward what's due for review and toward the grammar
+ * the player is weakest on (see pickQuestions). */
+function drawQuestions(levelId: LevelId, count: number): Question[] {
+  return pickQuestions(levelId, count, loadDueIds(levelId), grammarWeights(levelId))
+}
+
+function focusQuestions(levelId: LevelId, focus: FocusSession): Question[] {
+  switch (focus.kind) {
+    case 'grammar':
+      return pickGrammarQuestions(levelId, focus.grammar, QUESTIONS_PER_SESSION)
+    case 'review':
+      return pickReviewQuestions(levelId, loadDueIds(levelId), QUESTIONS_PER_SESSION)
+    case 'retryMissed':
+      return questionsByIds(levelId, focus.questionIds)
+  }
+}
+
 /** The opening draw for a run: a focus run's hand-picked set, or a normal
- * random pick biased toward what's due for review. */
+ * draw. */
 function initialQuestions(levelId: LevelId, mode: GameMode, focus: FocusSession | undefined): Question[] {
   if (focus) {
-    const picked =
-      focus.kind === 'grammar'
-        ? pickGrammarQuestions(levelId, focus.grammar, QUESTIONS_PER_SESSION)
-        : questionsByIds(levelId, focus.questionIds)
+    const picked = focusQuestions(levelId, focus)
     // Callers only offer a focus run that has questions, but a stale id list
     // (the bank changed between runs) mustn't leave the run with nothing.
     if (picked.length > 0) return picked
   }
-  return pickQuestions(levelId, mode === 'endless' ? ENDLESS_BATCH : QUESTIONS_PER_SESSION, loadDueIds(levelId))
+  return drawQuestions(levelId, mode === 'endless' ? ENDLESS_BATCH : QUESTIONS_PER_SESSION)
 }
 
 function displayFor(tile: Tile, capitalizeFirst: boolean): string {
@@ -181,7 +195,7 @@ export default function GameScreen({
     if (!isEndless) return
     if (questions.length - qIndex > ENDLESS_REFILL_AT) return
     setQuestions((current) => {
-      const next = pickQuestions(levelId, ENDLESS_BATCH, loadDueIds(levelId))
+      const next = drawQuestions(levelId, ENDLESS_BATCH)
       // Skip anything this run has already served. A long enough run exhausts
       // the pool, at which point this comes back empty — then the run starts
       // over on a clean slate rather than stalling with nothing to show.

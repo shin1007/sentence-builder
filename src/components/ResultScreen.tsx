@@ -5,6 +5,7 @@ import { focusLabel, MODE_LABEL } from '../data/modes'
 import { grammarLabel } from '../data/grammar'
 import { speakEnglish } from '../audio/speech'
 import { normalizedScore } from '../utils/scoring'
+import { dueReviewCount } from '../utils/reviewQueue'
 import Confetti from './Confetti'
 import type { FocusSession, LevelResult, MissedQuestion } from '../types'
 import styles from './ResultScreen.module.css'
@@ -53,6 +54,11 @@ export default function ResultScreen({
   // A focus run is usually shorter than ten questions, so it never earns stars
   // (see MIN_RANKED_QUESTIONS); showing three dark stars would read as failure.
   const showStars = !focus
+  // What's still due after this run decides where a review run's retry goes
+  // (see App): more of this level, or the review picker for other levels.
+  const [dueAfter] = useState(() => (focus?.kind === 'review' ? dueReviewCount(result.levelId) : 0))
+  const retryLabel =
+    focus?.kind !== 'review' ? 'もう一度' : dueAfter > 0 ? `つづけて復習 (${dueAfter}問)` : 'ほかのコースを復習'
 
   return (
     <div className={styles.screen}>
@@ -134,7 +140,7 @@ export default function ResultScreen({
             onRetry()
           }}
         >
-          もう一度
+          {retryLabel}
         </button>
       </div>
 

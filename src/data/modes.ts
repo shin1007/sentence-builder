@@ -10,5 +10,16 @@ export const MODE_LABEL: Record<GameMode, string> = {
 
 /** Names a focus run on the HUD and result screen. */
 export function focusLabel(focus: FocusSession): string {
-  return focus.kind === 'grammar' ? `🎯 ${grammarLabel(focus.grammar)}` : '🔁 間違えた問題'
+  switch (focus.kind) {
+    case 'grammar':
+      return `🎯 ${grammarLabel(focus.grammar)}`
+    case 'review':
+      return REVIEW_LABEL
+    case 'retryMissed':
+      return '🔁 間違えた問題'
+  }
 }
+
+/** The spaced-repetition review run (FocusSession 'review'). */
+export const REVIEW_LABEL = '📚 復習'
+
