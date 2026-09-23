@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { dueReviewCount, loadDueIds, recordCorrect, recordMiss } from './reviewQueue'
+import {
+  MAX_TRACKED,
+  dueReviewCount,
+  isShakyAnswer,
+  loadDueIds,
+  recordCorrect,
+  recordMiss,
+  recordShaky,
+} from './reviewQueue'
 import { QUESTIONS } from '../data/questions'
 
 /** Minimal Storage stand-in — see storage.test.ts for why this is a manual
@@ -77,15 +85,19 @@ describe('reviewQueue', () => {
   })
 
   it('caps the tracked list, dropping the oldest miss first', () => {
-    for (let i = 0; i < 35; i++) {
+    for (let i = 0; i < MAX_TRACKED + 5; i++) {
       recordMiss('eiken4', `q${i}`, NOW)
     }
     const ids = loadDueIds('eiken4', NOW)
-    expect(ids).toHaveLength(30)
+    expect(ids).toHaveLength(MAX_TRACKED)
     expect(ids).not.toContain('q0')
     expect(ids).not.toContain('q4')
     expect(ids).toContain('q5')
-    expect(ids).toContain('q34')
+    expect(ids).toContain(`q${MAX_TRACKED + 4}`)
+  })
+
+  it('keeps well over a few runs worth of misses', () => {
+    expect(MAX_TRACKED).toBeGreaterThanOrEqual(100)
   })
 
   it('returns an empty list instead of throwing when stored data is corrupt', () => {
@@ -106,5 +118,42 @@ describe('reviewQueue', () => {
     recordCorrect('eiken4', b.id, NOW)
     expect(dueReviewCount('eiken4', NOW)).toBe(1)
     expect(dueReviewCount('eiken4', NOW + DAY_MS)).toBe(2)
+  })
+
+  describe('shaky answers', () => {
+    it('queues an untracked question for tomorrow, not now', () => {
+      recordShaky('eiken4', 'q1', NOW)
+      expect(loadDueIds('eiken4', NOW)).toEqual([])
+      expect(loadDueIds('eiken4', NOW + DAY_MS)).toEqual(['q1'])
+    })
+
+    it('moves a due-now miss to tomorrow', () => {
+      recordMiss('eiken4', 'q1', NOW)
+      recordShaky('eiken4', 'q1', NOW)
+      expect(loadDueIds('eiken4', NOW)).toEqual([])
+      expect(loadDueIds('eiken4', NOW + DAY_MS)).toEqual(['q1'])
+    })
+
+    it('repeats the current interval instead of advancing', () => {
+      recordMiss('eiken4', 'q1', NOW)
+      recordCorrect('eiken4', 'q1', NOW) // step 1
+      recordCorrect('eiken4', 'q1', NOW + DAY_MS) // step 2: 3 days
+      const later = NOW + 4 * DAY_MS
+      recordShaky('eiken4', 'q1', later)
+      expect(loadDueIds('eiken4', later + 2 * DAY_MS)).toEqual([])
+      expect(loadDueIds('eiken4', later + 3 * DAY_MS)).toEqual(['q1'])
+    })
+
+    it('flags answers that used most of the time or were reshuffled', () => {
+      expect(isShakyAnswer({ timeLeft: 8, timeLimit: 10, removals: 0, timed: true })).toBe(false)
+      expect(isShakyAnswer({ timeLeft: 2, timeLimit: 10, removals: 0, timed: true })).toBe(true)
+      expect(isShakyAnswer({ timeLeft: 8, timeLimit: 10, removals: 1, timed: true })).toBe(false)
+      expect(isShakyAnswer({ timeLeft: 8, timeLimit: 10, removals: 2, timed: true })).toBe(true)
+    })
+
+    it('ignores the clock when untimed', () => {
+      expect(isShakyAnswer({ timeLeft: 0, timeLimit: 10, removals: 0, timed: false })).toBe(false)
+      expect(isShakyAnswer({ timeLeft: 0, timeLimit: 10, removals: 2, timed: false })).toBe(true)
+    })
   })
 })
