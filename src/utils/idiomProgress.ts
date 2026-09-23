@@ -57,12 +57,11 @@ export function recordIdiomResult(question: Question, correct: boolean) {
 }
 
 /**
- * The answer as the tiles the player places: one entry per word, except that
- * a chunked idiom's words are joined into a single entry. Joining the result
- * with spaces always gives back the full sentence.
+ * The word range to serve as one tile for the question's idiom: the idiom's
+ * span while it's chunked, otherwise none. See unitsWithSpans
+ * (utils/phraseScaffold.ts) for turning spans into tiles.
  */
-export function answerUnits(question: Question, chunked: boolean): string[] {
-  const { words, idiom } = question
-  if (!chunked || !idiom) return words
-  return [...words.slice(0, idiom.start), words.slice(idiom.start, idiom.end).join(' '), ...words.slice(idiom.end)]
+export function idiomSpans(question: Question, chunked: boolean): [number, number][] {
+  const { idiom } = question
+  return chunked && idiom ? [[idiom.start, idiom.end]] : []
 }

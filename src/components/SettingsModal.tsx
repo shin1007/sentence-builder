@@ -193,9 +193,10 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
               >
                 <div className={styles.optionHeader}>
                   <span className={styles.optionTitle}>aa 大文字OFF</span>
+                  <span className={styles.optionBadge}>基本</span>
                 </div>
                 <p className={styles.optionDesc}>
-                  すべての単語を小文字にして、並び順の実力試しができます。
+                  文頭の単語も小文字にして、最初の単語を自分で考えます（I や人名・地名は大文字のまま）。
                 </p>
               </button>
             </div>

@@ -8,10 +8,13 @@ import { isShakyAnswer, loadDueIds, recordCorrect, recordMiss, recordReviewRecal
 import { MAX_RELEARN_PER_RUN, countScored, insertRelearn, type Relearnable } from '../utils/relearn'
 import { recordFirstTry, recordRecovered, recordMissedOnly } from '../utils/progressStats'
 import { grammarWeights, recordGrammarResult } from '../utils/grammarStats'
-import { answerUnits, recordIdiomResult, shouldChunkIdiom } from '../utils/idiomProgress'
+import { idiomSpans, recordIdiomResult, shouldChunkIdiom } from '../utils/idiomProgress'
+import { phraseChunks, unitsWithSpans } from '../utils/phraseScaffold'
 import { acceptedOrders, fitsSomeOrder, isAccepted, misplacedSlots, splitFinalPunct } from '../utils/answerCheck'
 import { isSpeechSupported, speakEnglish, speakJapanese } from '../audio/speech'
 import { grammarLabel } from '../data/grammar'
+import { keepsCapital } from '../data/capitalization'
+import { ORDER_HINTS, detectOrderMistake, type OrderMistake } from '../data/orderHints'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
 import { QUESTIONS_PER_SESSION, calcStars, timeBonus } from '../utils/scoring'
@@ -52,19 +55,24 @@ function shuffle<T>(arr: T[]): T[] {
 
 interface Answer {
   /** The tiles in written order: normally a word each, but a chunked idiom
-   * is a single tile (see answerUnits). The sentence-final mark is not on
-   * any tile — it's shown after the slots (see utils/answerCheck.ts). */
+   * (see utils/idiomProgress.ts) or, while the player is struggling with the
+   * grammar, a noun phrase (see utils/phraseScaffold.ts) is a single tile.
+   * The sentence-final mark is not on any tile — it's shown after the slots
+   * (see utils/answerCheck.ts). */
   units: string[]
   /** The sentence-final `.`, `?` or `!`. */
   punct: string
   /** Every tile order that counts as correct; the first is `units`. */
   orders: string[][]
+  /** Noun phrases are merged into single tiles for this question. */
+  phrasesChunked: boolean
 }
 
-function answerFor(question: Question): Answer {
-  const withPunct = answerUnits(question, shouldChunkIdiom(question))
+function answerFor(levelId: LevelId, question: Question): Answer {
+  const phrases = phraseChunks(levelId, question)
+  const withPunct = unitsWithSpans(question.words, [...idiomSpans(question, shouldChunkIdiom(question)), ...phrases])
   const { units, punct } = splitFinalPunct(withPunct)
-  return { units, punct, orders: acceptedOrders(question.words, withPunct) }
+  return { units, punct, orders: acceptedOrders(question.words, withPunct), phrasesChunked: phrases.length > 0 }
 }
 
 function buildTiles(units: string[]): Tile[] {
@@ -85,8 +93,6 @@ function noteFor(question: Question): string | undefined {
   return question.note
 }
 
-/** The very first word is always sentence-capitalized; "I" stays capitalized
- * regardless (it's a mandatory pronoun capital, not a sentence-start hint). */
 /** A normal draw: biased toward what's due for review and toward the grammar
  * the player is weakest on (see pickQuestions). */
 function drawQuestions(levelId: LevelId, count: number): Question[] {
@@ -116,8 +122,14 @@ function initialQuestions(levelId: LevelId, mode: GameMode, focus: FocusSession 
   return drawQuestions(levelId, mode === 'endless' ? ENDLESS_BATCH : QUESTIONS_PER_SESSION)
 }
 
-function displayFor(tile: Tile, capitalizeFirst: boolean): string {
-  if (capitalizeFirst || tile.uid !== 0 || tile.word === 'I') return tile.word
+/** With the first-word capital hint off, the sentence-initial tile loses
+ * its capital — unless the word is always capitalized (`I'm`, `Tom`,
+ * `Kyoto`; see keepsCapital). `secondWord` tells the modal `May` from the
+ * month. */
+function displayFor(tile: Tile, capitalizeFirst: boolean, secondWord: string | undefined): string {
+  if (capitalizeFirst || tile.uid !== 0) return tile.word
+  const [first, ...rest] = tile.word.split(' ')
+  if (keepsCapital(first, rest[0] ?? secondWord)) return tile.word
   return tile.word.charAt(0).toLowerCase() + tile.word.slice(1)
 }
 
@@ -155,7 +167,7 @@ export default function GameScreen({
 
   /** The answer as the player builds it, one entry per tile. Decided when the
    * question comes up so progress booked mid-question can't reshape it. */
-  const [answer, setAnswer] = useState<Answer>(() => answerFor(questions[0]))
+  const [answer, setAnswer] = useState<Answer>(() => answerFor(levelId, questions[0]))
   const units = answer.units
   const [tray, setTray] = useState<Tile[]>(() => buildTiles(units))
   const [slots, setSlots] = useState<(Tile | null)[]>(() => new Array(units.length).fill(null))
@@ -199,13 +211,16 @@ export default function GameScreen({
   /** A wrong tile was tapped on this question, so its hint is showing (see
    * handleTrayTap). */
   const [hintShown, setHintShown] = useState(false)
+  /** The typical word-order mistake the player's last wrong order showed, if
+   * any (see data/orderHints.ts) — named alongside the usual hint. */
+  const [orderHint, setOrderHint] = useState<OrderMistake | null>(null)
 
   const lastTickSecond = useRef(-1)
   const advanceTimer = useRef<number | null>(null)
   const pendingAdvance = useRef<(() => void) | null>(null)
   const advanceGeneration = useRef(0)
   const popIdRef = useRef(0)
-  const pendingCheck = useRef<{ timerId: number; isCorrect: boolean } | null>(null)
+  const pendingCheck = useRef<{ timerId: number; isCorrect: boolean; mistake: OrderMistake | null } | null>(null)
   /**
    * Latest outcome per question in this session, for the progress tracker.
    * A question can be missed, recovered, and (in endless) come back and be
@@ -286,8 +301,9 @@ export default function GameScreen({
     removalsThisQuestion.current = 0
     setShaky(false)
     setHintShown(false)
+    setOrderHint(null)
     const q = questions[qIndex]
-    const nextAnswer = answerFor(q)
+    const nextAnswer = answerFor(levelId, q)
     const nextUnits = nextAnswer.units
     setAnswer(nextAnswer)
     setTray(buildTiles(nextUnits))
@@ -297,7 +313,7 @@ export default function GameScreen({
     setTimeLimit(nextLimit)
     setTimeLeft(nextLimit)
     lastTickSecond.current = -1
-  }, [qIndex, questions, level, cancelPendingCheck])
+  }, [qIndex, questions, level, levelId, cancelPendingCheck])
 
   // The countdown shouldn't start ticking while the prompt is still being
   // read aloud (the Japanese one, or in listening mode the English sentence
@@ -575,6 +591,7 @@ export default function GameScreen({
   useEffect(() => {
     if (status === 'playing' && timeLeft <= 0) {
       cancelPendingCheck()
+      setOrderHint(detectOrderMistake(question, slots.map((s) => s?.word ?? null), answer.orders))
       resolve(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -604,11 +621,12 @@ export default function GameScreen({
 
   const confirmNow = () => {
     if (!pendingCheck.current) return
-    const { isCorrect } = pendingCheck.current
+    const { isCorrect, mistake } = pendingCheck.current
     window.clearTimeout(pendingCheck.current.timerId)
     pendingCheck.current = null
     setAwaitingConfirm(false)
     sound.click()
+    if (!isCorrect) setOrderHint(mistake)
     resolve(isCorrect)
   }
 
@@ -648,6 +666,7 @@ export default function GameScreen({
       if (!fitsSomeOrder(tried, answer.orders)) {
         // 間違えた単語をタップした瞬間に赤枠＆シェイクで通知！
         setErrorTileUid(tile.uid)
+        setOrderHint(detectOrderMistake(question, tried, answer.orders))
         // Only the first wrong tile on a question counts against the idiom,
         // like a first-try result; a repeat doesn't count at all.
         if (!missedThisQuestion.current && !question.relearn) recordIdiomResult(question, false)
@@ -706,14 +725,17 @@ export default function GameScreen({
       sound.place()
 
       if (nextSlots.every((s) => s !== null)) {
-        const isCorrect = isAccepted(nextSlots.map((s) => (s as Tile).word), answer.orders)
+        const placedWords = nextSlots.map((s) => (s as Tile).word)
+        const isCorrect = isAccepted(placedWords, answer.orders)
+        const mistake = isCorrect ? null : detectOrderMistake(question, placedWords, answer.orders)
         setAwaitingConfirm(true)
         const timerId = window.setTimeout(() => {
           pendingCheck.current = null
           setAwaitingConfirm(false)
+          if (!isCorrect) setOrderHint(mistake)
           resolve(isCorrect)
         }, CONFIRM_GRACE_MS)
-        pendingCheck.current = { timerId, isCorrect }
+        pendingCheck.current = { timerId, isCorrect, mistake }
       }
     }
   }
@@ -847,14 +869,21 @@ export default function GameScreen({
           {question.relearn && status === 'playing' && (
             <span className={styles.note}>🔁 さっき まちがえた問題だよ</span>
           )}
+          {answer.phrasesChunked && status === 'playing' && (
+            <span className={styles.note}>🧩 ことばのまとまりを1枚のカードにしているよ</span>
+          )}
           {(status === 'wrong' || status === 'rebuild' || status === 'rebuilt') && (
             <>
               <p className={`${styles.note} ${styles.noteWrong}`}>正解: {question.words.join(' ')}</p>
+              {orderHint && <span className={`${styles.note} ${styles.noteHint}`}>🔎 {ORDER_HINTS[orderHint]}</span>}
               {question.note && <span className={styles.note}>{noteFor(question)}</span>}
             </>
           )}
           {status === 'playing' && hintShown && hintFor(question) && (
             <span className={`${styles.note} ${styles.noteHint}`}>💡 ヒント: {hintFor(question)}</span>
+          )}
+          {status === 'playing' && hintShown && orderHint && (
+            <span className={`${styles.note} ${styles.noteHint}`}>🔎 {ORDER_HINTS[orderHint]}</span>
           )}
           {status === 'rebuild' && <p className={styles.note}>✍️ 正しい順番で ならべてみよう</p>}
           {status === 'rebuilt' && <p className={styles.note}>👍 できた！</p>}
@@ -875,7 +904,7 @@ export default function GameScreen({
               <AnswerSlot
                 key={i}
                 word={tile ? tile.word : null}
-                displayWord={tile ? displayFor(tile, capitalizeFirst) : undefined}
+                displayWord={tile ? displayFor(tile, capitalizeFirst, question.words[1]) : undefined}
                 colorIndex={tile ? tile.uid : i}
                 position={i + 1}
                 mismatch={!!misplaced?.[i] && !!tile}
@@ -911,7 +940,7 @@ export default function GameScreen({
                 <WordTile
                   key={tile.uid}
                   word={tile.word}
-                  displayWord={displayFor(tile, capitalizeFirst)}
+                  displayWord={displayFor(tile, capitalizeFirst, question.words[1])}
                   colorIndex={tile.uid}
                   onClick={() => handleTrayTap(tile)}
                   disabled={(status !== 'playing' && status !== 'rebuild') || placed}
