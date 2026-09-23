@@ -25,6 +25,7 @@ npm run preview  # ビルド結果のプレビュー
 npm run lint      # oxlint
 npm test          # vitest
 npm run grammar:coverage  # 文法タグごとの出題数と手薄な項目を表示
+npm run vocab:audit       # レベルごとの語彙を CEFR-J Wordlist と照らして点検（--all で全件表示）
 ```
 
 ## アイコン生成
