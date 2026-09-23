@@ -15,7 +15,7 @@ function readBool(key: string, fallback: boolean) {
 }
 
 export function useGameSettings() {
-  const [capitalizeFirst, setCapitalizeFirst] = useState(() => readBool(CAPITALIZE_KEY, true))
+  const [capitalizeFirst, setCapitalizeFirst] = useState(() => readBool(CAPITALIZE_KEY, false))
   // Practice mode drops the timer and hearts so a learner can take their
   // time on each question without risking an early game-over.
   const [practiceMode, setPracticeMode] = useState(() => readBool(PRACTICE_MODE_KEY, false))

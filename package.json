@@ -10,7 +10,8 @@
     "test": "vitest run",
     "preview": "vite preview",
     "grammar:coverage": "tsx scripts/grammar-coverage.ts",
-    "vocab:audit": "tsx scripts/vocab-audit.ts"
+    "vocab:audit": "tsx scripts/vocab-audit.ts",
+    "pos:generate": "tsx scripts/pos-lexicon.ts"
   },
   "dependencies": {
     "react": "^19.2.8",

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { IDIOM_CHUNKED_UNTIL, answerUnits, recordIdiomResult, shouldChunkIdiom } from './idiomProgress'
+import { IDIOM_CHUNKED_UNTIL, idiomSpans, recordIdiomResult, shouldChunkIdiom } from './idiomProgress'
+import { unitsWithSpans } from './phraseScaffold'
 import { idiomQuestion } from '../data/templates/idioms'
 import { q } from '../data/questionGen'
 
@@ -37,16 +38,16 @@ describe('idiomQuestion', () => {
   })
 })
 
-describe('answerUnits', () => {
+describe('idiomSpans', () => {
   it('joins the idiom into one unit when chunked', () => {
-    expect(answerUnits(question, true)).toEqual(['I', 'take care of', 'my', 'dog.'])
-    expect(answerUnits(question, true).join(' ')).toBe(question.words.join(' '))
+    const units = unitsWithSpans(question.words, idiomSpans(question, true))
+    expect(units).toEqual(['I', 'take care of', 'my', 'dog.'])
+    expect(units.join(' ')).toBe(question.words.join(' '))
   })
 
   it('leaves the words alone when not chunked or not an idiom question', () => {
-    expect(answerUnits(question, false)).toEqual(question.words)
-    const plain = q('p-0', '', 'This is a pen.')
-    expect(answerUnits(plain, true)).toEqual(plain.words)
+    expect(idiomSpans(question, false)).toEqual([])
+    expect(idiomSpans(q('p-0', '', 'This is a pen.'), true)).toEqual([])
   })
 })
 
