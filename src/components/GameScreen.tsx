@@ -9,6 +9,7 @@ import { MAX_RELEARN_PER_RUN, countScored, insertRelearn, type Relearnable } fro
 import { recordFirstTry, recordRecovered, recordMissedOnly } from '../utils/progressStats'
 import { grammarWeights, recordGrammarResult } from '../utils/grammarStats'
 import { idiomSpans, recordIdiomResult, shouldChunkIdiom } from '../utils/idiomProgress'
+import { forgetSolved, recentlySolvedIds, recordSolved } from '../utils/solvedQuestions'
 import { phraseChunks, unitsWithSpans } from '../utils/phraseScaffold'
 import { acceptedOrders, fitsSomeOrder, isAccepted, misplacedSlots, splitFinalPunct } from '../utils/answerCheck'
 import { isSpeechSupported, speakEnglish, speakJapanese } from '../audio/speech'
@@ -93,18 +94,19 @@ function noteFor(question: Question): string | undefined {
   return question.note
 }
 
-/** A normal draw: biased toward what's due for review and toward the grammar
- * the player is weakest on (see pickQuestions). */
+/** A normal draw: biased toward what's due for review, toward the grammar
+ * the player is weakest on, and away from sentences they've recently solved
+ * cleanly (see pickQuestions). */
 function drawQuestions(levelId: LevelId, count: number): Question[] {
-  return pickQuestions(levelId, count, loadDueIds(levelId), grammarWeights(levelId))
+  return pickQuestions(levelId, count, loadDueIds(levelId), grammarWeights(levelId), recentlySolvedIds(levelId))
 }
 
 function focusQuestions(levelId: LevelId, focus: FocusSession): Question[] {
   switch (focus.kind) {
     case 'grammar':
-      return pickGrammarQuestions(levelId, focus.grammar, QUESTIONS_PER_SESSION)
+      return pickGrammarQuestions(levelId, focus.grammar, QUESTIONS_PER_SESSION, recentlySolvedIds(levelId))
     case 'review':
-      return pickReviewQuestions(levelId, loadDueIds(levelId), QUESTIONS_PER_SESSION)
+      return pickReviewQuestions(levelId, loadDueIds(levelId), QUESTIONS_PER_SESSION, recentlySolvedIds(levelId))
     case 'retryMissed':
       return questionsByIds(levelId, focus.questionIds)
   }
@@ -481,6 +483,8 @@ export default function GameScreen({
         if (!questionOutcome.current.has(question.id)) recordReviewRecall(levelId, question.id, true)
         if (wasShaky) recordShaky(levelId, question.id)
         else recordCorrect(levelId, question.id)
+        // Only a clean first answer in the run shows the sentence is known.
+        if (!wasShaky && !questionOutcome.current.has(question.id)) recordSolved(levelId, question.id)
         // A hesitant answer doesn't show the idiom has stuck, so it leaves
         // the tiles as they are.
         if (!wasShaky) recordIdiomResult(question, true)
@@ -504,6 +508,7 @@ export default function GameScreen({
           setLives(nextLives)
           if (!questionOutcome.current.has(question.id)) recordReviewRecall(levelId, question.id, false)
           recordMiss(levelId, question.id)
+          forgetSolved(levelId, question.id)
           // A wrong tile on this question already counted against the idiom.
           if (!missedThisQuestion.current) recordIdiomResult(question, false)
         }
@@ -697,6 +702,7 @@ export default function GameScreen({
 
         setCombo(0)
         recordMiss(levelId, question.id)
+        forgetSolved(levelId, question.id)
         const nextLives = practiceMode ? lives : lives - 1
         setLives(nextLives)
         if (!practiceMode && nextLives <= 0) {
