@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  countDueQuestions,
   pickGrammarQuestions,
   pickQuestions,
+  pickReviewQuestions,
   questionsByIds,
   QUESTIONS,
   QUESTIONS_BY_GRAMMAR,
@@ -87,6 +89,63 @@ describe('pickQuestions', () => {
     for (const levelId of LEVEL_IDS) {
       expect(pickQuestions(levelId, 10, [])).toHaveLength(10)
     }
+  })
+
+  it('draws heavily-weighted grammar more often than lightly-weighted grammar', () => {
+    const levelId: LevelId = 'eiken3'
+    const tags = Object.entries(QUESTIONS_BY_GRAMMAR[levelId])
+      .filter(([, questions]) => questions!.length >= 10)
+      .map(([grammar]) => grammar as GrammarId)
+    const [heavy, light] = tags
+    const tally = (weights: Partial<Record<GrammarId, number>>) => {
+      let heavyCount = 0
+      let lightCount = 0
+      for (let i = 0; i < 300; i++) {
+        for (const question of pickQuestions(levelId, 10, [], weights)) {
+          if (question.grammar === heavy) heavyCount++
+          if (question.grammar === light) lightCount++
+        }
+      }
+      return { heavyCount, lightCount }
+    }
+    const neutral = tally({})
+    const weighted = tally({ [heavy]: 2, [light]: 0.4 })
+    expect(weighted.heavyCount).toBeGreaterThan(neutral.heavyCount * 1.3)
+    expect(weighted.lightCount).toBeLessThan(neutral.lightCount * 0.8)
+  })
+
+  it('still puts every priority id in even when the rest is weighted away from its grammar', () => {
+    const levelId: LevelId = 'eiken4'
+    const due = QUESTIONS[levelId].slice(0, 2)
+    const weights = Object.fromEntries(due.map((question) => [question.grammar, 0.01]))
+    const ids = pickQuestions(levelId, 10, due.map((question) => question.id), weights).map((question) => question.id)
+    for (const question of due) expect(ids).toContain(question.id)
+  })
+})
+
+describe('pickReviewQuestions', () => {
+  it('returns only due questions and same-grammar siblings', () => {
+    for (const levelId of LEVEL_IDS) {
+      const due = QUESTIONS[levelId].slice(0, 3)
+      const dueGrammar = new Set(due.map((question) => question.grammar))
+      const picked = pickReviewQuestions(levelId, due.map((question) => question.id), 10)
+      for (const question of due) expect(picked).toContainEqual(question)
+      expect(picked.every((question) => dueGrammar.has(question.grammar))).toBe(true)
+      expect(new Set(picked.map((question) => question.id)).size).toBe(picked.length)
+    }
+  })
+
+  it('caps at count and is empty when nothing is due', () => {
+    const due = QUESTIONS.eiken4.slice(0, 8).map((question) => question.id)
+    expect(pickReviewQuestions('eiken4', due, 10)).toHaveLength(10)
+    expect(pickReviewQuestions('eiken4', [], 10)).toEqual([])
+  })
+})
+
+describe('countDueQuestions', () => {
+  it('counts only ids still in the level bank', () => {
+    const [a, b] = QUESTIONS.eiken4
+    expect(countDueQuestions('eiken4', [a.id, 'gone', b.id])).toBe(2)
   })
 })
 

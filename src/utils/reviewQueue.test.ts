@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { loadDueIds, recordCorrect, recordMiss } from './reviewQueue'
+import { dueReviewCount, loadDueIds, recordCorrect, recordMiss } from './reviewQueue'
+import { QUESTIONS } from '../data/questions'
 
 /** Minimal Storage stand-in — see storage.test.ts for why this is a manual
  * mock instead of jsdom. */
@@ -95,5 +96,15 @@ describe('reviewQueue', () => {
   it('migrates the old plain string[] format to due-now items', () => {
     localStorage.setItem('wordrush.missed.eiken4', JSON.stringify(['q1', 'q2']))
     expect(loadDueIds('eiken4', NOW).sort()).toEqual(['q1', 'q2'])
+  })
+
+  it('counts due questions that still exist in the bank, and only once they are due', () => {
+    const [a, b] = QUESTIONS.eiken4
+    recordMiss('eiken4', a.id, NOW)
+    recordMiss('eiken4', b.id, NOW)
+    recordMiss('eiken4', 'no-longer-in-bank', NOW)
+    recordCorrect('eiken4', b.id, NOW)
+    expect(dueReviewCount('eiken4', NOW)).toBe(1)
+    expect(dueReviewCount('eiken4', NOW + DAY_MS)).toBe(2)
   })
 })

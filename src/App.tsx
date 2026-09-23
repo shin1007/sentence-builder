@@ -8,12 +8,13 @@ import LevelSelect from './components/LevelSelect'
 import GameScreen from './components/GameScreen'
 import ResultScreen from './components/ResultScreen'
 import ProgressScreen from './components/ProgressScreen'
-import type { FocusSession, GameMode, LevelId, LevelResult, MissedQuestion } from './types'
+import { dueReviewCount } from './utils/reviewQueue'
+import type { FocusSession, GameMode, LevelId, LevelResult, LevelSelectMode, MissedQuestion } from './types'
 import './styles/global.css'
 
 type Screen =
   | { name: 'title' }
-  | { name: 'levelSelect'; mode: GameMode }
+  | { name: 'levelSelect'; mode: LevelSelectMode }
   | { name: 'game'; levelId: LevelId; mode: GameMode; focus?: FocusSession }
   | { name: 'result'; result: LevelResult; isNewBest: boolean; missed: MissedQuestion[]; focus?: FocusSession }
   | { name: 'progress' }
@@ -24,7 +25,7 @@ function Shell() {
 
   const goTitle = useCallback(() => setScreen({ name: 'title' }), [])
   const goLevelSelect = useCallback(
-    (mode: GameMode) => setScreen({ name: 'levelSelect', mode }),
+    (mode: LevelSelectMode) => setScreen({ name: 'levelSelect', mode }),
     [],
   )
   const goGame = useCallback(
@@ -46,7 +47,11 @@ function Shell() {
       {screen.name === 'levelSelect' && (
         <LevelSelect
           mode={screen.mode}
-          onSelect={(levelId) => goGame(levelId, screen.mode)}
+          onSelect={(levelId) =>
+            screen.mode === 'review'
+              ? goGame(levelId, 'challenge', { kind: 'review' })
+              : goGame(levelId, screen.mode)
+          }
           onBack={goTitle}
         />
       )}
@@ -60,7 +65,11 @@ function Shell() {
           }
           // A grammar drill is launched from the progress screen, so backing
           // out returns there rather than to a level picker never visited.
-          onExit={() => (screen.focus?.kind === 'grammar' ? goProgress() : goLevelSelect(screen.mode))}
+          onExit={() => {
+            if (screen.focus?.kind === 'grammar') goProgress()
+            else if (screen.focus?.kind === 'review') goLevelSelect('review')
+            else goLevelSelect(screen.mode)
+          }}
         />
       )}
       {screen.name === 'result' && (
@@ -69,11 +78,22 @@ function Shell() {
           isNewBest={screen.isNewBest}
           missed={screen.missed}
           focus={screen.focus}
-          onRetry={() => goGame(screen.result.levelId, screen.result.mode ?? 'challenge', screen.focus)}
+          onRetry={() => {
+            // Another review run only makes sense while something is still
+            // due; otherwise it'd fall back to a normal draw under a review
+            // label, so show the review picker (other levels may have some).
+            if (screen.focus?.kind === 'review' && dueReviewCount(screen.result.levelId) === 0) {
+              goLevelSelect('review')
+            } else {
+              goGame(screen.result.levelId, screen.result.mode ?? 'challenge', screen.focus)
+            }
+          }}
           onRetryMissed={(questionIds) =>
             goGame(screen.result.levelId, 'challenge', { kind: 'retryMissed', questionIds })
           }
-          onLevelSelect={() => goLevelSelect(screen.result.mode ?? 'challenge')}
+          onLevelSelect={() =>
+            goLevelSelect(screen.focus?.kind === 'review' ? 'review' : (screen.result.mode ?? 'challenge'))
+          }
           onProgress={goProgress}
         />
       )}

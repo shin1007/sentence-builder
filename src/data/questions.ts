@@ -87,26 +87,38 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 /**
- * Picks `count` questions for a session, biased toward `priorityIds` —
- * questions the player previously got wrong on this level (see
- * utils/reviewQueue.ts) — so they resurface instead of only ever seeing a
- * fresh random slice of the pool.
- *
- * Each review question also brings along one *other* sentence drilling the
- * same grammar point. Replaying only the exact sentence that was missed lets a
- * player pass review by remembering that sentence's tile order; a sibling on
- * the same point checks the grammar has actually stuck. Priority questions
- * aren't clustered at the front of the session; the final order is shuffled.
+ * Relative draw weight per grammar tag (see utils/grammarStats.ts's
+ * grammarWeights). A tag left out is weighted 1.
  */
-export function pickQuestions(levelId: LevelId, count: number, priorityIds: readonly string[] = []): Question[] {
-  const pool = QUESTIONS[levelId]
+export type GrammarWeights = Partial<Record<GrammarId, number>>
+
+/**
+ * Shuffles so that heavier items tend to come first (Efraimidis–Spirakis
+ * weighted sampling without replacement: each item's key is u^(1/w)). With
+ * every weight 1 this is a plain uniform shuffle.
+ */
+function weightedShuffle<T>(items: readonly T[], weightOf: (item: T) => number): T[] {
+  return items
+    .map((item) => ({ item, key: Math.random() ** (1 / Math.max(weightOf(item), 1e-6)) }))
+    .sort((a, b) => b.key - a.key)
+    .map(({ item }) => item)
+}
+
+/**
+ * The review questions among `priorityIds` found in this level, each followed
+ * by one *other* sentence drilling the same grammar point.
+ *
+ * Replaying only the exact sentence that was missed lets a player pass review
+ * by remembering that sentence's tile order; a sibling on the same point
+ * checks the grammar has actually stuck. They're interleaved so that, when
+ * there's more review due than fits, a session still covers pairs rather than
+ * spending every slot on repeats and none on siblings.
+ */
+function reviewWithSiblings(levelId: LevelId, priorityIds: readonly string[]): Question[] {
   const prioritySet = new Set(priorityIds)
-  const priority = shuffle(pool.filter((question) => prioritySet.has(question.id)))
+  const priority = shuffle(QUESTIONS[levelId].filter((question) => prioritySet.has(question.id)))
   const chosen = new Set(priority.map((question) => question.id))
 
-  // Interleave each review question with its sibling so that, when there's
-  // more review due than fits, the session still covers pairs rather than
-  // spending every slot on repeats and none on siblings.
   const review: Question[] = []
   for (const question of priority) {
     review.push(question)
@@ -117,10 +129,53 @@ export function pickQuestions(levelId: LevelId, count: number, priorityIds: read
       chosen.add(sibling.id)
     }
   }
+  return review
+}
 
-  const rest = pool.filter((question) => !chosen.has(question.id))
-  const ordered = [...review, ...shuffle(rest)].slice(0, Math.min(count, pool.length))
+/**
+ * Picks `count` questions for a session, biased toward `priorityIds` —
+ * questions the player previously got wrong on this level (see
+ * utils/reviewQueue.ts) — so they resurface instead of only ever seeing a
+ * fresh random slice of the pool. Each comes with a same-grammar sibling (see
+ * reviewWithSiblings).
+ *
+ * The rest of the session is drawn at random, weighted by `grammarWeights`, so
+ * that grammar the player keeps missing comes up more often and grammar
+ * they've clearly got comes up less, instead of every point getting equal
+ * time. Priority questions aren't clustered at the front of the session; the
+ * final order is shuffled.
+ */
+export function pickQuestions(
+  levelId: LevelId,
+  count: number,
+  priorityIds: readonly string[] = [],
+  grammarWeights: GrammarWeights = {},
+): Question[] {
+  const pool = QUESTIONS[levelId]
+  const review = reviewWithSiblings(levelId, priorityIds)
+  const chosen = new Set(review.map((question) => question.id))
+
+  const rest = weightedShuffle(
+    pool.filter((question) => !chosen.has(question.id)),
+    (question) => (question.grammar ? (grammarWeights[question.grammar] ?? 1) : 1),
+  )
+  const ordered = [...review, ...rest].slice(0, Math.min(count, pool.length))
   return shuffle(ordered)
+}
+
+/**
+ * Questions for a dedicated review run: only what's due (`dueIds`) and each
+ * one's same-grammar sibling, capped at `count`. Empty when nothing is due.
+ */
+export function pickReviewQuestions(levelId: LevelId, dueIds: readonly string[], count: number): Question[] {
+  return shuffle(reviewWithSiblings(levelId, dueIds).slice(0, count))
+}
+
+/** How many of `dueIds` still exist in this level's bank — the review count
+ * worth showing, since ids of questions dropped from the bank can linger in
+ * a player's saved queue. */
+export function countDueQuestions(levelId: LevelId, dueIds: readonly string[]): number {
+  return questionsByIds(levelId, dueIds).length
 }
 
 /** Questions for a practice run on one grammar point within a level. */

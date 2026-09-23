@@ -10,6 +10,10 @@ export type LevelId = 'eiken4' | 'eiken3' | 'eikenPre2' | 'eiken2' | 'koukoNyush
  */
 export type GameMode = 'challenge' | 'endless'
 
+/** What picking a level on the level-select screen starts: a normal run in
+ * one of the modes, or a review run (FocusSession 'review'). */
+export type LevelSelectMode = GameMode | 'review'
+
 /** Attribution for a question adapted from a real, verifiable past exam
  * (as opposed to an originally-written practice question). */
 export interface QuestionSource {
@@ -74,10 +78,13 @@ export interface LevelResult {
  * fair comparison against a random one.
  * - 'retryMissed': replay the questions the player missed in the last run.
  * - 'grammar': drill one grammar point (from the progress screen's weak list).
+ * - 'review': only the questions due in the spaced-repetition queue (see
+ *   utils/reviewQueue.ts), each with a same-grammar sibling.
  */
 export type FocusSession =
   | { kind: 'retryMissed'; questionIds: string[] }
   | { kind: 'grammar'; grammar: GrammarId }
+  | { kind: 'review' }
 
 /** A question that went wrong in a run, for the result screen's review list. */
 export interface MissedQuestion {

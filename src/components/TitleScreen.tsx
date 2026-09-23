@@ -3,22 +3,28 @@ import { requestFullscreenLandscape } from '../hooks/useForcedLandscape'
 import { useSoundContext } from '../context/sound'
 import { useSettingsContext } from '../context/settings'
 import SettingsModal from './SettingsModal'
-import { MODE_LABEL } from '../data/modes'
-import type { GameMode } from '../types'
+import { MODE_LABEL, REVIEW_LABEL } from '../data/modes'
+import { LEVELS } from '../data/levels'
+import { dueReviewCount } from '../utils/reviewQueue'
+import type { LevelSelectMode } from '../types'
 import styles from './TitleScreen.module.css'
 
 export default function TitleScreen({
   onStart,
   onProgress,
 }: {
-  onStart: (mode: GameMode) => void
+  onStart: (mode: LevelSelectMode) => void
   onProgress: () => void
 }) {
   const sound = useSoundContext()
   const { retryOnMiss, practiceMode } = useSettingsContext()
   const [showSettings, setShowSettings] = useState(false)
+  // Spaced repetition only works if due questions actually get answered on
+  // time, so the title says when some are waiting rather than leaving them to
+  // surface only if the player happens to pick that level.
+  const [dueTotal] = useState(() => LEVELS.reduce((sum, level) => sum + dueReviewCount(level.id), 0))
 
-  const handleStart = (mode: GameMode) => {
+  const handleStart = (mode: LevelSelectMode) => {
     sound.unlock()
     sound.click()
     void requestFullscreenLandscape()
@@ -81,6 +87,13 @@ export default function TitleScreen({
       </div>
 
       <div className={styles.badgeRow}>
+        <button
+          className={`${styles.badge} ${styles.badgeButton} ${dueTotal > 0 ? styles.reviewDue : ''}`}
+          onClick={() => handleStart('review')}
+          disabled={dueTotal === 0}
+        >
+          {dueTotal > 0 ? `${REVIEW_LABEL} ${dueTotal}問` : `${REVIEW_LABEL}なし`}
+        </button>
         <button
           className={`${styles.badge} ${styles.badgeButton}`}
           onClick={() => {

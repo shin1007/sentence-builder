@@ -1,3 +1,4 @@
+import { countDueQuestions } from '../data/questions'
 import type { LevelId } from '../types'
 
 const KEY_PREFIX = 'wordrush.missed.'
@@ -67,6 +68,12 @@ export function loadDueIds(levelId: LevelId, now = Date.now()): string[] {
   return readItems(levelId)
     .filter((item) => item.dueAt <= now)
     .map((item) => item.id)
+}
+
+/** How many questions on this level are due for review right now — what a
+ * review run (FocusSession 'review') would draw from. */
+export function dueReviewCount(levelId: LevelId, now = Date.now()): number {
+  return countDueQuestions(levelId, loadDueIds(levelId, now))
 }
 
 /** Marks a question as missed, resetting it to step 0 (due immediately) —

@@ -161,7 +161,7 @@ export default function ProgressScreen({
                       <div className={styles.weakLabelGroup}>
                         <span className={styles.weakLabel}>{grammarLabel(stat.grammar)}</span>
                         <span className={styles.weakLevel}>
-                          {level.icon} {level.title}・{stat.correct}/{stat.attempts}問
+                          {level.icon} {level.title}・直近 {stat.correct}/{stat.attempts}問
                         </span>
                       </div>
                       <div className={styles.barTrack}>
