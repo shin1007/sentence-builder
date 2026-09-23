@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getLevel } from '../data/levels'
-import { pickQuestions } from '../data/questions'
+import { pickGrammarQuestions, pickQuestions, questionsByIds } from '../data/questions'
 import { useSoundContext } from '../context/sound'
 import { useSettingsContext } from '../context/settings'
 import { saveBestResultIfBetter } from '../utils/storage'
 import { loadDueIds, recordCorrect, recordMiss } from '../utils/reviewQueue'
 import { recordFirstTry, recordRecovered, recordMissedOnly } from '../utils/progressStats'
+import { recordGrammarResult } from '../utils/grammarStats'
 import { speakEnglish, speakJapanese } from '../audio/speech'
 import { WordTile, AnswerSlot } from './WordTile'
 import Confetti from './Confetti'
 import { QUESTIONS_PER_SESSION, calcStars, timeBonus } from '../utils/scoring'
 import { timeLimitFor } from '../data/timeLimit'
-import type { GameMode, LevelId, LevelResult, Question } from '../types'
+import { focusLabel } from '../data/modes'
+import type { FocusSession, GameMode, LevelId, LevelResult, MissedQuestion, Question } from '../types'
 import styles from './GameScreen.module.css'
 
 const START_LIVES = 10
@@ -48,6 +50,21 @@ function buildTiles(question: Question): Tile[] {
 
 /** The very first word is always sentence-capitalized; "I" stays capitalized
  * regardless (it's a mandatory pronoun capital, not a sentence-start hint). */
+/** The opening draw for a run: a focus run's hand-picked set, or a normal
+ * random pick biased toward what's due for review. */
+function initialQuestions(levelId: LevelId, mode: GameMode, focus: FocusSession | undefined): Question[] {
+  if (focus) {
+    const picked =
+      focus.kind === 'grammar'
+        ? pickGrammarQuestions(levelId, focus.grammar, QUESTIONS_PER_SESSION)
+        : questionsByIds(levelId, focus.questionIds)
+    // Callers only offer a focus run that has questions, but a stale id list
+    // (the bank changed between runs) mustn't leave the run with nothing.
+    if (picked.length > 0) return picked
+  }
+  return pickQuestions(levelId, mode === 'endless' ? ENDLESS_BATCH : QUESTIONS_PER_SESSION, loadDueIds(levelId))
+}
+
 function displayFor(tile: Tile, capitalizeFirst: boolean): string {
   if (capitalizeFirst || tile.uid !== 0 || tile.word === 'I') return tile.word
   return tile.word.charAt(0).toLowerCase() + tile.word.slice(1)
@@ -56,25 +73,27 @@ function displayFor(tile: Tile, capitalizeFirst: boolean): string {
 export default function GameScreen({
   levelId,
   mode,
+  focus,
   onFinish,
   onExit,
 }: {
   levelId: LevelId
   mode: GameMode
-  onFinish: (result: LevelResult, isNewBest: boolean) => void
+  /** Set for a targeted practice run; always a fixed-length run. */
+  focus?: FocusSession
+  onFinish: (result: LevelResult, isNewBest: boolean, missed: MissedQuestion[]) => void
   onExit: () => void
 }) {
   const level = getLevel(levelId)!
   const sound = useSoundContext()
   const { capitalizeFirst, practiceMode, retryOnMiss } = useSettingsContext()
 
-  const isEndless = mode === 'endless'
+  const isEndless = mode === 'endless' && !focus
 
-  // Challenge mode draws its ten questions once. Endless keeps the queue
-  // topped up (see the refill effect below) so it never runs dry.
-  const [questions, setQuestions] = useState<Question[]>(() =>
-    pickQuestions(levelId, isEndless ? ENDLESS_BATCH : QUESTIONS_PER_SESSION, loadDueIds(levelId)),
-  )
+  // Challenge mode draws its ten questions once (a focus run, however many it
+  // was given). Endless keeps the queue topped up (see the refill effect
+  // below) so it never runs dry.
+  const [questions, setQuestions] = useState<Question[]>(() => initialQuestions(levelId, mode, focus))
   const [qIndex, setQIndex] = useState(0)
   const question = questions[qIndex]
 
@@ -121,6 +140,12 @@ export default function GameScreen({
    * ends is what never got recovered.
    */
   const questionOutcome = useRef<Map<string, 'missed' | 'recovered'>>(new Map())
+  /** Every question missed at least once this run, in the order it was
+   * first missed, for the result screen's review list. */
+  const missedQuestions = useRef<Map<string, Question>>(new Map())
+  /** True while a wrong-tile hint is being read aloud, so a quick string of
+   * wrong taps doesn't restart the sentence from the top each time. */
+  const hintSpeaking = useRef(false)
   /**
    * Every question id this run has queued up, so an endless refill can skip
    * what the player has already seen. Refills used to be deduped only against
@@ -226,12 +251,30 @@ export default function GameScreen({
     [],
   )
 
+  /**
+   * Books a question's first result this run against its grammar point, then
+   * records where it now stands. Only the first result counts toward grammar
+   * accuracy — a later recovery shows the player was told the answer, not that
+   * the point had stuck.
+   */
+  const recordOutcome = useCallback(
+    (q: Question, correct: boolean) => {
+      if (!questionOutcome.current.has(q.id) && q.grammar) {
+        recordGrammarResult(levelId, q.grammar, correct)
+      }
+      questionOutcome.current.set(q.id, correct ? 'recovered' : 'missed')
+      if (!correct && !missedQuestions.current.has(q.id)) missedQuestions.current.set(q.id, q)
+    },
+    [levelId],
+  )
+
   const finishSession = useCallback(
     (finalScore: number, finalCorrect: number, finalBestCombo: number, finalAnswered: number) => {
-      // A challenge run is always out of ten, even when hearts run out early.
-      // An endless run is scored over however many questions were answered —
-      // never zero, so the result screen can't divide by it.
-      const total = isEndless ? Math.max(finalAnswered, 1) : QUESTIONS_PER_SESSION
+      // A challenge run is always out of ten, even when hearts run out early
+      // (a focus run, out of however many questions it was given). An endless
+      // run is scored over however many questions were answered — never zero,
+      // so the result screen can't divide by it.
+      const total = isEndless ? Math.max(finalAnswered, 1) : questions.length
       const stars = calcStars(finalCorrect, total)
       const result: LevelResult = {
         levelId,
@@ -250,15 +293,20 @@ export default function GameScreen({
       }
       recordMissedOnly(unrecovered)
 
+      const missed: MissedQuestion[] = [...missedQuestions.current.values()].map((q) => ({
+        question: q,
+        recovered: questionOutcome.current.get(q.id) === 'recovered',
+      }))
+
       // Practice sessions have no timer/lives pressure, so they aren't a fair
-      // comparison against timed runs and shouldn't overwrite a real best —
-      // and shouldn't count toward the daily streak either.
-      const isNewBest = practiceMode ? false : saveBestResultIfBetter(result)
-      if (stars >= 2) sound.win()
+      // comparison against timed runs and shouldn't overwrite a real best.
+      // Neither should a focus run, whose questions were hand-picked.
+      const isNewBest = practiceMode || focus ? false : saveBestResultIfBetter(result)
+      if (stars >= 2 || (focus && finalCorrect / total >= 0.7)) sound.win()
       else sound.lose()
-      onFinish(result, isNewBest)
+      onFinish(result, isNewBest, missed)
     },
-    [levelId, mode, isEndless, onFinish, sound, practiceMode],
+    [levelId, mode, isEndless, onFinish, sound, practiceMode, focus, questions.length],
   )
 
   const resolve = useCallback(
@@ -298,7 +346,7 @@ export default function GameScreen({
         } else {
           recordFirstTry()
         }
-        questionOutcome.current.set(question.id, 'recovered')
+        recordOutcome(question, true)
         if (nextCombo === 3 || (nextCombo >= 5 && nextCombo % 5 === 0)) {
           window.setTimeout(() => sound.combo(nextCombo >= 5 ? 2 : 1), 260)
         }
@@ -310,7 +358,7 @@ export default function GameScreen({
         setShake(true)
         sound.wrong()
         recordMiss(levelId, question.id)
-        questionOutcome.current.set(question.id, 'missed')
+        recordOutcome(question, false)
         window.setTimeout(() => setShake(false), 450)
       }
 
@@ -366,6 +414,7 @@ export default function GameScreen({
       practiceMode,
       isEndless,
       levelId,
+      recordOutcome,
     ],
   )
 
@@ -423,7 +472,16 @@ export default function GameScreen({
         sound.wrong()
         setCombo(0)
         recordMiss(levelId, question.id)
-        questionOutcome.current.set(question.id, 'missed')
+        recordOutcome(question, false)
+        // Read the correct sentence aloud as a hint: hearing the whole thing
+        // in order is often enough to spot which word comes next, and it
+        // turns a wrong tap into listening practice rather than a dead end.
+        if (sound.sfxOn && !hintSpeaking.current) {
+          hintSpeaking.current = true
+          void speakEnglish(question.words.join(' ')).then(() => {
+            hintSpeaking.current = false
+          })
+        }
         const nextLives = practiceMode ? lives : lives - 1
         setLives(nextLives)
         window.setTimeout(() => setErrorTileUid(null), 450)
@@ -512,10 +570,11 @@ export default function GameScreen({
           )}
           <span className={styles.levelTag}>
             {`${level.icon} ${level.title}`}
+            {focus && ` ${focusLabel(focus)}`}
             {practiceMode && ` 🧪`}
           </span>
           <span className={styles.progress}>
-            {isEndless ? `${qIndex + 1}問目` : `${qIndex + 1} / ${QUESTIONS_PER_SESSION}`}
+            {isEndless ? `${qIndex + 1}問目` : `${qIndex + 1} / ${questions.length}`}
           </span>
           <div className={styles.spacer} />
           {!practiceMode && (

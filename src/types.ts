@@ -66,3 +66,22 @@ export interface LevelResult {
   stars: 0 | 1 | 2 | 3
   clearedAt: number
 }
+
+/**
+ * A short, targeted run instead of a normal random draw. Focus runs are
+ * practice: they're scored and tracked like any other run, but never
+ * overwrite the level's best score — a hand-picked set of questions isn't a
+ * fair comparison against a random one.
+ * - 'retryMissed': replay the questions the player missed in the last run.
+ * - 'grammar': drill one grammar point (from the progress screen's weak list).
+ */
+export type FocusSession =
+  | { kind: 'retryMissed'; questionIds: string[] }
+  | { kind: 'grammar'; grammar: GrammarId }
+
+/** A question that went wrong in a run, for the result screen's review list. */
+export interface MissedQuestion {
+  question: Question
+  /** True if the player got it right later in the same run. */
+  recovered: boolean
+}

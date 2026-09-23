@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { pickQuestions, QUESTIONS, MAX_WORDS_PER_QUESTION } from './questions'
+import {
+  pickGrammarQuestions,
+  pickQuestions,
+  questionsByIds,
+  QUESTIONS,
+  QUESTIONS_BY_GRAMMAR,
+  MAX_WORDS_PER_QUESTION,
+} from './questions'
+import type { GrammarId } from './grammar'
 import type { LevelId } from '../types'
 
 const LEVEL_IDS = Object.keys(QUESTIONS) as LevelId[]
@@ -49,10 +57,55 @@ describe('pickQuestions', () => {
     expect(pickQuestions(levelId, 10, ['does-not-exist'])).toHaveLength(10)
   })
 
+  it('brings along another sentence on the same grammar point for each review question', () => {
+    for (const levelId of LEVEL_IDS) {
+      const due = QUESTIONS[levelId].filter((question) => question.grammar).slice(0, 3)
+      const picked = pickQuestions(levelId, 10, due.map((question) => question.id))
+      for (const question of due) {
+        const siblings = (QUESTIONS_BY_GRAMMAR[levelId][question.grammar!] ?? []).filter(
+          (candidate) => candidate.id !== question.id,
+        )
+        if (siblings.length === 0) continue
+        const hasSibling = picked.some(
+          (candidate) => candidate.id !== question.id && candidate.grammar === question.grammar,
+        )
+        expect(hasSibling).toBe(true)
+      }
+    }
+  })
+
+  it('keeps the requested count and stays duplicate-free when more review is due than fits', () => {
+    for (const levelId of LEVEL_IDS) {
+      const due = QUESTIONS[levelId].slice(0, 30).map((question) => question.id)
+      const ids = pickQuestions(levelId, 10, due).map((question) => question.id)
+      expect(ids).toHaveLength(10)
+      expect(new Set(ids).size).toBe(10)
+    }
+  })
+
   it('still returns the requested count with no priority ids given', () => {
     for (const levelId of LEVEL_IDS) {
       expect(pickQuestions(levelId, 10, [])).toHaveLength(10)
     }
+  })
+})
+
+describe('pickGrammarQuestions', () => {
+  it('returns only questions on the requested grammar point, capped at count', () => {
+    for (const levelId of LEVEL_IDS) {
+      for (const [grammar, questions] of Object.entries(QUESTIONS_BY_GRAMMAR[levelId])) {
+        const picked = pickGrammarQuestions(levelId, grammar as GrammarId, 10)
+        expect(picked).toHaveLength(Math.min(10, questions!.length))
+        expect(picked.every((question) => question.grammar === grammar)).toBe(true)
+      }
+    }
+  })
+})
+
+describe('questionsByIds', () => {
+  it('keeps the given order and skips unknown ids', () => {
+    const [a, b] = QUESTIONS.eiken4
+    expect(questionsByIds('eiken4', [b.id, 'nope', a.id])).toEqual([b, a])
   })
 })
 

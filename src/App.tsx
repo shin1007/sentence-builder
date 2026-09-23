@@ -8,14 +8,14 @@ import LevelSelect from './components/LevelSelect'
 import GameScreen from './components/GameScreen'
 import ResultScreen from './components/ResultScreen'
 import ProgressScreen from './components/ProgressScreen'
-import type { GameMode, LevelId, LevelResult } from './types'
+import type { FocusSession, GameMode, LevelId, LevelResult, MissedQuestion } from './types'
 import './styles/global.css'
 
 type Screen =
   | { name: 'title' }
   | { name: 'levelSelect'; mode: GameMode }
-  | { name: 'game'; levelId: LevelId; mode: GameMode }
-  | { name: 'result'; result: LevelResult; isNewBest: boolean }
+  | { name: 'game'; levelId: LevelId; mode: GameMode; focus?: FocusSession }
+  | { name: 'result'; result: LevelResult; isNewBest: boolean; missed: MissedQuestion[]; focus?: FocusSession }
   | { name: 'progress' }
 
 function Shell() {
@@ -28,15 +28,11 @@ function Shell() {
     [],
   )
   const goGame = useCallback(
-    (levelId: LevelId, mode: GameMode) => setScreen({ name: 'game', levelId, mode }),
+    (levelId: LevelId, mode: GameMode, focus?: FocusSession) =>
+      setScreen({ name: 'game', levelId, mode, focus }),
     [],
   )
   const goProgress = useCallback(() => setScreen({ name: 'progress' }), [])
-  const goResult = useCallback(
-    (result: LevelResult, isNewBest: boolean) =>
-      setScreen({ name: 'result', result, isNewBest }),
-    [],
-  )
 
   const handleFirstPointer = useCallback(() => {
     sound.unlock()
@@ -58,19 +54,35 @@ function Shell() {
         <GameScreen
           levelId={screen.levelId}
           mode={screen.mode}
-          onFinish={goResult}
-          onExit={() => goLevelSelect(screen.mode)}
+          focus={screen.focus}
+          onFinish={(result, isNewBest, missed) =>
+            setScreen({ name: 'result', result, isNewBest, missed, focus: screen.focus })
+          }
+          // A grammar drill is launched from the progress screen, so backing
+          // out returns there rather than to a level picker never visited.
+          onExit={() => (screen.focus?.kind === 'grammar' ? goProgress() : goLevelSelect(screen.mode))}
         />
       )}
       {screen.name === 'result' && (
         <ResultScreen
           result={screen.result}
           isNewBest={screen.isNewBest}
-          onRetry={() => goGame(screen.result.levelId, screen.result.mode ?? 'challenge')}
+          missed={screen.missed}
+          focus={screen.focus}
+          onRetry={() => goGame(screen.result.levelId, screen.result.mode ?? 'challenge', screen.focus)}
+          onRetryMissed={(questionIds) =>
+            goGame(screen.result.levelId, 'challenge', { kind: 'retryMissed', questionIds })
+          }
           onLevelSelect={() => goLevelSelect(screen.result.mode ?? 'challenge')}
+          onProgress={goProgress}
         />
       )}
-      {screen.name === 'progress' && <ProgressScreen onBack={goTitle} />}
+      {screen.name === 'progress' && (
+        <ProgressScreen
+          onBack={goTitle}
+          onPracticeGrammar={(levelId, grammar) => goGame(levelId, 'challenge', { kind: 'grammar', grammar })}
+        />
+      )}
     </div>
   )
 }
