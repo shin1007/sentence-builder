@@ -8,6 +8,7 @@ import { isShakyAnswer, loadDueIds, recordCorrect, recordMiss, recordShaky } fro
 import { MAX_RELEARN_PER_RUN, countScored, insertRelearn, type Relearnable } from '../utils/relearn'
 import { recordFirstTry, recordRecovered, recordMissedOnly } from '../utils/progressStats'
 import { grammarWeights, recordGrammarResult } from '../utils/grammarStats'
+import { answerUnits, recordIdiomResult, shouldChunkIdiom } from '../utils/idiomProgress'
 import { isSpeechSupported, speakEnglish, speakJapanese } from '../audio/speech'
 import { grammarLabel } from '../data/grammar'
 import { WordTile, AnswerSlot } from './WordTile'
@@ -48,8 +49,28 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-function buildTiles(question: Question): Tile[] {
-  return shuffle(question.words.map((word, uid) => ({ uid, word })))
+/** The tiles for one question: normally a word each, but a chunked idiom is
+ * a single tile (see answerUnits). */
+function unitsFor(question: Question): string[] {
+  return answerUnits(question, shouldChunkIdiom(question))
+}
+
+function buildTiles(units: string[]): Tile[] {
+  return shuffle(units.map((word, uid) => ({ uid, word })))
+}
+
+/** What the hint names: the idiom itself for an idiom question (its words
+ * may be spread over several tiles), otherwise the grammar point. */
+function hintFor(question: Question): string | undefined {
+  if (question.idiom) return `${question.idiom.phrase}（${question.idiom.meaning}）`
+  return question.grammar ? grammarLabel(question.grammar) : question.note
+}
+
+/** The note shown after answering; an idiom question also spells out the
+ * idiom, since the group label alone ("群動詞") doesn't say which one. */
+function noteFor(question: Question): string | undefined {
+  if (question.idiom) return `${question.note}: ${question.idiom.phrase}（${question.idiom.meaning}）`
+  return question.note
 }
 
 /** The very first word is always sentence-capitalized; "I" stays capitalized
@@ -120,10 +141,11 @@ export default function GameScreen({
   const [qIndex, setQIndex] = useState(0)
   const question = questions[qIndex]
 
-  const [tray, setTray] = useState<Tile[]>(() => buildTiles(questions[0]))
-  const [slots, setSlots] = useState<(Tile | null)[]>(() =>
-    new Array(questions[0].words.length).fill(null),
-  )
+  /** The answer as the player builds it, one entry per tile. Decided when the
+   * question comes up so progress booked mid-question can't reshape it. */
+  const [units, setUnits] = useState<string[]>(() => unitsFor(questions[0]))
+  const [tray, setTray] = useState<Tile[]>(() => buildTiles(units))
+  const [slots, setSlots] = useState<(Tile | null)[]>(() => new Array(units.length).fill(null))
 
   const [lives, setLives] = useState(START_LIVES)
   const [score, setScore] = useState(0)
@@ -252,8 +274,10 @@ export default function GameScreen({
     setShaky(false)
     setHintShown(false)
     const q = questions[qIndex]
-    setTray(buildTiles(q))
-    setSlots(new Array(q.words.length).fill(null))
+    const nextUnits = unitsFor(q)
+    setUnits(nextUnits)
+    setTray(buildTiles(nextUnits))
+    setSlots(new Array(nextUnits.length).fill(null))
     setStatus('playing')
     const nextLimit = timeLimitFor(level, q.words.length)
     setTimeLimit(nextLimit)
@@ -426,6 +450,9 @@ export default function GameScreen({
         sound.correct()
         if (wasShaky) recordShaky(levelId, question.id)
         else recordCorrect(levelId, question.id)
+        // A hesitant answer doesn't show the idiom has stuck, so it leaves
+        // the tiles as they are.
+        if (!wasShaky) recordIdiomResult(question, true)
         // Missed earlier in this session means this is a recovery, even if the
         // question had already been recovered once and came back around.
         if (questionOutcome.current.has(question.id)) {
@@ -445,6 +472,8 @@ export default function GameScreen({
           setCombo(0)
           setLives(nextLives)
           recordMiss(levelId, question.id)
+          // A wrong tile on this question already counted against the idiom.
+          if (!missedThisQuestion.current) recordIdiomResult(question, false)
         }
         setShake(true)
         sound.wrong()
@@ -498,7 +527,7 @@ export default function GameScreen({
       Promise.all([minDelay, speechDone]).then(() => {
         if (needsRebuild && generation === advanceGeneration.current) {
           rebuildAdvance.current = advance
-          setSlots(new Array(question.words.length).fill(null))
+          setSlots(new Array(units.length).fill(null))
           setStatus('rebuild')
           return
         }
@@ -523,6 +552,7 @@ export default function GameScreen({
       isEndless,
       levelId,
       recordOutcome,
+      units.length,
     ],
   )
 
@@ -569,7 +599,7 @@ export default function GameScreen({
   /** Laying out the correct sentence after a miss: only the right next word
    * sticks, and nothing is scored or recorded. */
   const handleRebuildTap = (tile: Tile, emptyIndex: number) => {
-    if (tile.word !== question.words[emptyIndex]) {
+    if (tile.word !== units[emptyIndex]) {
       setErrorTileUid(tile.uid)
       sound.remove()
       window.setTimeout(() => setErrorTileUid(null), 450)
@@ -598,10 +628,13 @@ export default function GameScreen({
 
     if (retryOnMiss) {
       // 即時判定モード: タップした単語がこのスロットの正解と一致するか判定
-      const expectedWord = question.words[emptyIndex]
+      const expectedWord = units[emptyIndex]
       if (tile.word !== expectedWord) {
         // 間違えた単語をタップした瞬間に赤枠＆シェイクで通知！
         setErrorTileUid(tile.uid)
+        // Only the first wrong tile on a question counts against the idiom,
+        // like a first-try result; a repeat doesn't count at all.
+        if (!missedThisQuestion.current && !question.relearn) recordIdiomResult(question, false)
         missedThisQuestion.current = true
         // Before handing over the answer, point at the grammar it turns on
         // (and in listening mode, what the sentence means) so the player has
@@ -793,13 +826,11 @@ export default function GameScreen({
           {(status === 'wrong' || status === 'rebuild' || status === 'rebuilt') && (
             <>
               <p className={`${styles.note} ${styles.noteWrong}`}>正解: {question.words.join(' ')}</p>
-              {question.note && <span className={styles.note}>{question.note}</span>}
+              {question.note && <span className={styles.note}>{noteFor(question)}</span>}
             </>
           )}
-          {status === 'playing' && hintShown && (question.grammar || question.note) && (
-            <span className={`${styles.note} ${styles.noteHint}`}>
-              💡 ヒント: {question.grammar ? grammarLabel(question.grammar) : question.note}
-            </span>
+          {status === 'playing' && hintShown && hintFor(question) && (
+            <span className={`${styles.note} ${styles.noteHint}`}>💡 ヒント: {hintFor(question)}</span>
           )}
           {status === 'rebuild' && <p className={styles.note}>✍️ 正しい順番で ならべてみよう</p>}
           {status === 'rebuilt' && <p className={styles.note}>👍 できた！</p>}
@@ -810,7 +841,7 @@ export default function GameScreen({
             <p className={`${styles.note} ${styles.noteWrong}`}>完成！でも まちがえたので正解には数えないよ</p>
           )}
           {(status === 'correct' || status === 'fixed') && question.note && (
-            <span className={styles.note}>{question.note}</span>
+            <span className={styles.note}>{noteFor(question)}</span>
           )}
         </div>
 
@@ -823,7 +854,7 @@ export default function GameScreen({
                 displayWord={tile ? displayFor(tile, capitalizeFirst) : undefined}
                 colorIndex={tile ? tile.uid : i}
                 position={i + 1}
-                mismatch={status === 'wrong' && !!tile && tile.word !== question.words[i]}
+                mismatch={status === 'wrong' && !!tile && tile.word !== units[i]}
                 onClick={() => handleSlotTap(i)}
               />
             ))}
