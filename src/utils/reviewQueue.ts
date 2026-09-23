@@ -3,8 +3,11 @@ import type { LevelId } from '../types'
 
 const KEY_PREFIX = 'wordrush.missed.'
 /** Caps how many missed questions we track per level so the list can't grow
- * forever; the oldest entry is dropped first when it's exceeded. */
-const MAX_TRACKED = 30
+ * forever; the oldest entry is dropped first when it's exceeded. It used to be
+ * 30, which a struggling player could pass in three runs — older misses then
+ * vanished without ever being reviewed. Items are tiny, so this is set well
+ * above what a player can build up between reviews. */
+export const MAX_TRACKED = 200
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -103,4 +106,46 @@ export function recordCorrect(levelId: LevelId, questionId: string, now = Date.n
   }
   items[index] = { id: questionId, step: nextStep, dueAt: now + REVIEW_STEP_DAYS[nextStep] * DAY_MS }
   writeItems(levelId, items)
+}
+
+/** A correct answer that used at least this share of the time limit. */
+export const SHAKY_TIME_RATIO = 0.75
+/** A correct answer after pulling tiles back out of the answer this many
+ * times (a tap on a filled slot, or 全て戻す). One fix is a slip; more is
+ * trial and error. */
+export const SHAKY_REMOVALS = 2
+
+/**
+ * Whether a correct answer was hesitant enough that the question should still
+ * be reviewed: most of the time limit used up, or the answer reshuffled
+ * several times. Untimed play (practice mode) is judged on the removals alone.
+ */
+export function isShakyAnswer({
+  timeLeft,
+  timeLimit,
+  removals,
+  timed,
+}: {
+  timeLeft: number
+  timeLimit: number
+  removals: number
+  timed: boolean
+}): boolean {
+  if (removals >= SHAKY_REMOVALS) return true
+  return timed && timeLimit > 0 && (timeLimit - timeLeft) / timeLimit >= SHAKY_TIME_RATIO
+}
+
+/**
+ * A correct but hesitant answer (see isShakyAnswer). A question not in the
+ * queue joins it at step 1 — due tomorrow, rather than now like a miss. One
+ * already in the queue repeats its current interval instead of advancing:
+ * it was answered, but not well enough to earn the wider gap.
+ */
+export function recordShaky(levelId: LevelId, questionId: string, now = Date.now()) {
+  const items = readItems(levelId)
+  const existing = items.find((item) => item.id === questionId)
+  const step = Math.max(existing?.step ?? 1, 1)
+  const rest = items.filter((item) => item.id !== questionId)
+  rest.push({ id: questionId, step, dueAt: now + REVIEW_STEP_DAYS[step] * DAY_MS })
+  writeItems(levelId, rest.slice(-MAX_TRACKED))
 }

@@ -4,7 +4,8 @@ import { pickGrammarQuestions, pickQuestions, pickReviewQuestions, questionsById
 import { useSoundContext } from '../context/sound'
 import { useSettingsContext } from '../context/settings'
 import { saveBestResultIfBetter } from '../utils/storage'
-import { loadDueIds, recordCorrect, recordMiss } from '../utils/reviewQueue'
+import { isShakyAnswer, loadDueIds, recordCorrect, recordMiss, recordShaky } from '../utils/reviewQueue'
+import { MAX_RELEARN_PER_RUN, countScored, insertRelearn, type Relearnable } from '../utils/relearn'
 import { recordFirstTry, recordRecovered, recordMissedOnly } from '../utils/progressStats'
 import { grammarWeights, recordGrammarResult } from '../utils/grammarStats'
 import { speakEnglish, speakJapanese } from '../audio/speech'
@@ -29,6 +30,8 @@ const FEEDBACK_DELAY_WRONG = 1500
  * still tap a filled slot to pull it back and fix it before it counts
  * against them — filling the board no longer locks the answer in instantly. */
 const CONFIRM_GRACE_MS = 650
+/** Pause on the finished sentence after rebuilding a missed answer. */
+const REBUILD_DONE_DELAY = 700
 
 interface Tile {
   uid: number
@@ -107,7 +110,9 @@ export default function GameScreen({
   // Challenge mode draws its ten questions once (a focus run, however many it
   // was given). Endless keeps the queue topped up (see the refill effect
   // below) so it never runs dry.
-  const [questions, setQuestions] = useState<Question[]>(() => initialQuestions(levelId, mode, focus))
+  // Missed questions are repeated later in the run (see utils/relearn.ts);
+  // those copies are marked `relearn` and aren't scored.
+  const [questions, setQuestions] = useState<Relearnable<Question>[]>(() => initialQuestions(levelId, mode, focus))
   const [qIndex, setQIndex] = useState(0)
   const question = questions[qIndex]
 
@@ -128,8 +133,16 @@ export default function GameScreen({
    * 'fixed' is a sentence finished after a wrong tile in retry-on-miss mode:
    * the board ends up right, but the player didn't get there unaided, so it
    * scores and counts as a miss rather than a correct answer.
+   *
+   * 'rebuild' follows a wrong answer: the correct sentence stays on screen and
+   * the player lays it out once themselves (wrong tiles just bounce, nothing
+   * is scored) before moving on — 'rebuilt' once they have. Seeing the answer
+   * is recognition; putting it together is the practice.
    */
-  const [status, setStatus] = useState<'playing' | 'correct' | 'wrong' | 'fixed'>('playing')
+  const [status, setStatus] = useState<'playing' | 'correct' | 'wrong' | 'fixed' | 'rebuild' | 'rebuilt'>('playing')
+  /** The answer on screen was correct but hesitant, so it was sent to review
+   * (see isShakyAnswer). */
+  const [shaky, setShaky] = useState(false)
   /**
    * This question's budget, scaled to how many words it takes (see
    * data/timeLimit.ts). Held in state rather than derived so a question that
@@ -170,6 +183,13 @@ export default function GameScreen({
    * endless can carry a miss over from an earlier appearance of the same
    * question. */
   const missedThisQuestion = useRef(false)
+  /** Times a tile was pulled back out of the answer on this question — part of
+   * judging whether a correct answer was hesitant. */
+  const removalsThisQuestion = useRef(0)
+  /** Repeats this run has queued (capped for fixed-length runs). */
+  const relearnAdded = useRef(0)
+  /** Moves on once the player has rebuilt a missed answer. */
+  const rebuildAdvance = useRef<(() => void) | null>(null)
   /**
    * Every question id this run has queued up, so an endless refill can skip
    * what the player has already seen. Refills used to be deduped only against
@@ -221,6 +241,8 @@ export default function GameScreen({
     if (qIndex === 0) return
     cancelPendingCheck()
     missedThisQuestion.current = false
+    removalsThisQuestion.current = 0
+    setShaky(false)
     const q = questions[qIndex]
     setTray(buildTiles(q))
     setSlots(new Array(q.words.length).fill(null))
@@ -299,7 +321,7 @@ export default function GameScreen({
       // (a focus run, out of however many questions it was given). An endless
       // run is scored over however many questions were answered — never zero,
       // so the result screen can't divide by it.
-      const total = isEndless ? Math.max(finalAnswered, 1) : questions.length
+      const total = isEndless ? Math.max(finalAnswered, 1) : countScored(questions)
       const stars = calcStars(finalCorrect, total)
       const result: LevelResult = {
         levelId,
@@ -331,7 +353,7 @@ export default function GameScreen({
       else sound.lose()
       onFinish(result, isNewBest, missed)
     },
-    [levelId, mode, isEndless, onFinish, sound, practiceMode, focus, questions.length],
+    [levelId, mode, isEndless, onFinish, sound, practiceMode, focus, questions],
   )
 
   const resolve = useCallback(
@@ -340,14 +362,22 @@ export default function GameScreen({
       // answer. The miss was already booked (life, review queue, grammar
       // stats) when the tile was tapped, so this only withholds the reward.
       const fixed = isCorrect && missedThisQuestion.current
+      const isRelearn = !!question.relearn
+      const cleanCorrect = isCorrect && !fixed
+      const wasShaky =
+        cleanCorrect &&
+        !isRelearn &&
+        isShakyAnswer({ timeLeft, timeLimit, removals: removalsThisQuestion.current, timed: !practiceMode })
       setStatus(fixed ? 'fixed' : isCorrect ? 'correct' : 'wrong')
+      setShaky(wasShaky)
 
       let nextScore = score
       let nextCombo = combo
       let nextBestCombo = bestCombo
       let nextCorrect = correctCount
       let nextLives = lives
-      const nextAnswered = answeredCount + 1
+      // A repeat isn't a new question, so it doesn't count toward the total.
+      const nextAnswered = isRelearn ? answeredCount : answeredCount + 1
       setAnsweredCount(nextAnswered)
 
       if (fixed) {
@@ -355,6 +385,14 @@ export default function GameScreen({
         // 'missed' in questionOutcome, so it's tallied as never recovered
         // at the end of the run unless it comes back and is solved cleanly.
         sound.place()
+      } else if (isCorrect && isRelearn) {
+        // A repeat within the run earns no points and leaves the review queue
+        // alone: getting it right a few questions after being shown the answer
+        // isn't the recall a wider interval is meant to reward. It still counts
+        // as a recovery in the progress record.
+        sound.correct()
+        recordRecovered()
+        recordOutcome(question, true)
       } else if (isCorrect) {
         const tier = combo >= 5 ? 2 : combo >= 3 ? 1 : 0
         const multiplier = tier === 2 ? 2 : tier === 1 ? 1.5 : 1
@@ -372,7 +410,8 @@ export default function GameScreen({
         setCorrectCount(nextCorrect)
         setScorePop({ id: popIdRef.current++, value: gained })
         sound.correct()
-        recordCorrect(levelId, question.id)
+        if (wasShaky) recordShaky(levelId, question.id)
+        else recordCorrect(levelId, question.id)
         // Missed earlier in this session means this is a recovery, even if the
         // question had already been recovered once and came back around.
         if (questionOutcome.current.has(question.id)) {
@@ -385,21 +424,31 @@ export default function GameScreen({
           window.setTimeout(() => sound.combo(nextCombo >= 5 ? 2 : 1), 260)
         }
       } else {
-        nextCombo = 0
-        nextLives = practiceMode ? lives : lives - 1
-        setCombo(0)
-        setLives(nextLives)
+        // Missing a repeat costs nothing: it's already due for review.
+        if (!isRelearn) {
+          nextCombo = 0
+          nextLives = practiceMode ? lives : lives - 1
+          setCombo(0)
+          setLives(nextLives)
+          recordMiss(levelId, question.id)
+        }
         setShake(true)
         sound.wrong()
-        recordMiss(levelId, question.id)
         recordOutcome(question, false)
         window.setTimeout(() => setShake(false), 450)
       }
 
       // Endless only ends on hearts (or the やめる button) — the queue itself
       // is refilled before it can run out.
-      const isLastQuestion = !isEndless && qIndex + 1 >= questions.length
       const outOfLives = !practiceMode && nextLives <= 0
+      // Anything missed comes back once more later in this run.
+      const requeue =
+        !cleanCorrect && !isRelearn && !outOfLives && (isEndless || relearnAdded.current < MAX_RELEARN_PER_RUN)
+      if (requeue) relearnAdded.current++
+      const isLastQuestion = !isEndless && !requeue && qIndex + 1 >= questions.length
+      // A wrong answer is rebuilt before moving on (not a 'fixed' one — that
+      // was already finished tile by tile — and not when the run is over).
+      const needsRebuild = !isCorrect && !outOfLives
       const generation = ++advanceGeneration.current
 
       // If the player backgrounds the app right after answering, don't let a
@@ -416,6 +465,9 @@ export default function GameScreen({
         if (isLastQuestion || outOfLives) {
           finishSession(nextScore, nextCorrect, nextBestCombo, nextAnswered)
         } else {
+          // Inserted only now, not at answer time: changing the queue resets
+          // the board, which would wipe the feedback still on screen.
+          if (requeue) setQuestions((current) => insertRelearn(current, qIndex))
           setQIndex((i) => i + 1)
         }
       }
@@ -429,7 +481,15 @@ export default function GameScreen({
       const minDelay = new Promise<void>((res) => {
         advanceTimer.current = window.setTimeout(res, isCorrect && !fixed ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG)
       })
-      Promise.all([minDelay, speechDone]).then(() => advance())
+      Promise.all([minDelay, speechDone]).then(() => {
+        if (needsRebuild && generation === advanceGeneration.current) {
+          rebuildAdvance.current = advance
+          setSlots(new Array(question.words.length).fill(null))
+          setStatus('rebuild')
+          return
+        }
+        advance()
+      })
     },
     [
       score,
@@ -492,10 +552,35 @@ export default function GameScreen({
     resolve(isCorrect)
   }
 
+  /** Laying out the correct sentence after a miss: only the right next word
+   * sticks, and nothing is scored or recorded. */
+  const handleRebuildTap = (tile: Tile, emptyIndex: number) => {
+    if (tile.word !== question.words[emptyIndex]) {
+      setErrorTileUid(tile.uid)
+      sound.remove()
+      window.setTimeout(() => setErrorTileUid(null), 450)
+      return
+    }
+    const nextSlots = [...slots]
+    nextSlots[emptyIndex] = tile
+    setSlots(nextSlots)
+    sound.place()
+    if (nextSlots.every((s) => s !== null)) {
+      setStatus('rebuilt')
+      const done = rebuildAdvance.current
+      rebuildAdvance.current = null
+      advanceTimer.current = window.setTimeout(() => done?.(), REBUILD_DONE_DELAY)
+    }
+  }
+
   const handleTrayTap = (tile: Tile) => {
-    if (status !== 'playing' || awaitingConfirm) return
+    if ((status !== 'playing' && status !== 'rebuild') || awaitingConfirm) return
     const emptyIndex = slots.findIndex((s) => s === null)
     if (emptyIndex === -1) return
+    if (status === 'rebuild') {
+      handleRebuildTap(tile, emptyIndex)
+      return
+    }
 
     if (retryOnMiss) {
       // 即時判定モード: タップした単語がこのスロットの正解と一致するか判定
@@ -505,8 +590,6 @@ export default function GameScreen({
         setErrorTileUid(tile.uid)
         missedThisQuestion.current = true
         sound.wrong()
-        setCombo(0)
-        recordMiss(levelId, question.id)
         recordOutcome(question, false)
         // Read the correct sentence aloud as a hint: hearing the whole thing
         // in order is often enough to spot which word comes next, and it
@@ -517,10 +600,14 @@ export default function GameScreen({
             hintSpeaking.current = false
           })
         }
+        window.setTimeout(() => setErrorTileUid(null), 450)
+        // A repeat costs nothing (see resolve).
+        if (question.relearn) return
+
+        setCombo(0)
+        recordMiss(levelId, question.id)
         const nextLives = practiceMode ? lives : lives - 1
         setLives(nextLives)
-        window.setTimeout(() => setErrorTileUid(null), 450)
-
         if (!practiceMode && nextLives <= 0) {
           // Hearts ran out mid-question: it's never completed, but it was
           // attempted and missed, so it counts toward the answered total.
@@ -564,6 +651,7 @@ export default function GameScreen({
     if (status !== 'playing') return
     if (!slots.some((s) => s !== null)) return
     cancelPendingCheck()
+    removalsThisQuestion.current++
     setSlots(new Array(slots.length).fill(null))
     sound.remove()
   }
@@ -573,6 +661,7 @@ export default function GameScreen({
     const tile = slots[index]
     if (!tile) return
     cancelPendingCheck()
+    removalsThisQuestion.current++
     const nextSlots = [...slots]
     nextSlots[index] = null
     setSlots(nextSlots)
@@ -609,7 +698,11 @@ export default function GameScreen({
             {practiceMode && ` 🧪`}
           </span>
           <span className={styles.progress}>
-            {isEndless ? `${qIndex + 1}問目` : `${qIndex + 1} / ${questions.length}`}
+            {question.relearn
+              ? '🔁 もう一回'
+              : isEndless
+                ? `${countScored(questions, qIndex + 1)}問目`
+                : `${countScored(questions, qIndex + 1)} / ${countScored(questions)}`}
           </span>
           <div className={styles.spacer} />
           {!practiceMode && (
@@ -669,11 +762,19 @@ export default function GameScreen({
               出典: {question.source.region} {question.source.year}
             </span>
           )}
-          {status === 'wrong' && (
+          {question.relearn && status === 'playing' && (
+            <span className={styles.note}>🔁 さっき まちがえた問題だよ</span>
+          )}
+          {(status === 'wrong' || status === 'rebuild' || status === 'rebuilt') && (
             <>
               <p className={`${styles.note} ${styles.noteWrong}`}>正解: {question.words.join(' ')}</p>
               {question.note && <span className={styles.note}>{question.note}</span>}
             </>
+          )}
+          {status === 'rebuild' && <p className={styles.note}>✍️ 正しい順番で ならべてみよう</p>}
+          {status === 'rebuilt' && <p className={styles.note}>👍 できた！</p>}
+          {status === 'correct' && shaky && (
+            <p className={styles.note}>📚 ちょっと迷ったね。あとで復習に出すよ</p>
           )}
           {status === 'fixed' && (
             <p className={`${styles.note} ${styles.noteWrong}`}>完成！でも まちがえたので正解には数えないよ</p>
@@ -723,7 +824,7 @@ export default function GameScreen({
                   displayWord={displayFor(tile, capitalizeFirst)}
                   colorIndex={tile.uid}
                   onClick={() => handleTrayTap(tile)}
-                  disabled={status !== 'playing' || placed}
+                  disabled={(status !== 'playing' && status !== 'rebuild') || placed}
                   placed={placed}
                   error={errorTileUid === tile.uid}
                 />
