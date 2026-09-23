@@ -43,7 +43,7 @@ const MUST: Sentence[] = [
   { jp: 'この川で泳いではいけません。', en: 'You must not swim in this river.' },
   { jp: '彼は試験のためにもっと一生懸命勉強しなければなりません。', en: 'He must study harder for the exam.' },
   { jp: '雨の日は気をつけなければなりません。', en: 'You must be careful on rainy days.' },
-  { jp: '私たちはこれらの古い木を守らなければなりません。', en: 'We must protect these old trees.' },
+  { jp: '私たちはこれらの古い木を守らなければなりません。', en: 'We must save these old trees.' },
 ]
 
 const SHALL_WE: Sentence[] = [
@@ -185,8 +185,8 @@ const TOO_ADJECTIVE: Sentence[] = [
   { jp: 'その音楽はこの部屋にはうるさすぎます。', en: 'The music is too loud for this room.' },
   { jp: 'この川は泳ぐには危険すぎます。', en: 'This river is too dangerous for swimming.' },
   { jp: 'そのかばんは学生には高すぎます。', en: 'The bag is too expensive for a student.' },
-  { jp: 'その道は大きなトラックには狭すぎます。', en: 'The road is too narrow for a big truck.' },
-  { jp: 'このスープは私には塩からすぎます。', en: 'This soup is too salty for me.' },
+  { jp: 'この箱は私の本を入れるには小さすぎます。', en: 'This box is too small for my books.' },
+  { jp: 'このスープは私には熱すぎます。', en: 'This soup is too hot for me.' },
 ]
 
 const EXCLAMATORY: Sentence[] = [

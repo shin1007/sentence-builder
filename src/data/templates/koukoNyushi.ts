@@ -48,7 +48,7 @@ const ADJ_COMPARATIVE_ANIMAL = [
   { en: 'taller', jp: '背が高い' },
   { en: 'heavier', jp: '重い' },
   { en: 'lighter', jp: '軽い' },
-  { en: 'louder', jp: 'うるさい' },
+  { en: 'older', jp: '年をとっている' },
   { en: 'gentler', jp: 'おとなしい' },
 ]
 
@@ -74,8 +74,8 @@ const CHORES = [
   { en: 'feed the cat', jp: '猫にえさをやらせました。' },
   { en: 'set the table', jp: 'テーブルの準備をさせました。' },
   { en: 'water the plants', jp: '植物に水をやらせました。' },
-  { en: 'fold the laundry', jp: '洗濯物をたたませました。' },
-  { en: 'sweep the floor', jp: '床を掃かせました。' },
+  { en: 'make the bed', jp: 'ベッドを整えさせました。' },
+  { en: 'clean the bathroom', jp: 'おふろ場をそうじさせました。' },
 ]
 
 const SVOC_ADJ = [
@@ -85,7 +85,7 @@ const SVOC_ADJ = [
   { en: 'excited', jpEnding: 'わくわくしました。' },
   { en: 'nervous', jpEnding: '緊張しました。' },
   { en: 'worried', jpEnding: '心配になりました。' },
-  { en: 'relieved', jpEnding: '安心しました。' },
+  { en: 'angry', jpEnding: '腹が立ちました。' },
   { en: 'proud', jpEnding: '誇らしくなりました。' },
   { en: 'lonely', jpEnding: '寂しくなりました。' },
   { en: 'upset', jpEnding: '腹立たしくなりました。' },
@@ -102,9 +102,9 @@ const SO_THAT_SENTENCES = [
   { en: 'It was so noisy that I could not concentrate on my homework.', jp: 'とてもうるさかったので、宿題に集中できませんでした。' },
   { en: 'The movie was so long that we missed the last train.', jp: 'その映画はとても長かったので、私たちは終電を逃しました。' },
   { en: 'She was so kind that everyone liked her.', jp: '彼女はとても親切だったので、みんなが彼女を好きになりました。' },
-  { en: 'The soup was so hot that I burned my tongue.', jp: 'そのスープはとても熱かったので、舌をやけどしました。' },
+  { en: 'The soup was so hot that I could not eat it.', jp: 'そのスープはとても熱かったので、食べられませんでした。' },
   { en: 'He ran so fast that no one could catch him.', jp: '彼はとても速く走ったので、誰も彼を捕まえられませんでした。' },
-  { en: 'The room was so messy that we spent all day cleaning it.', jp: '部屋はとても散らかっていたので、一日中そうじに費やしました。' },
+  { en: 'The room was so dirty that we spent all day cleaning it.', jp: '部屋はとても汚れていたので、一日中そうじに費やしました。' },
 ]
 
 const TOO_TO_SENTENCES = [
@@ -129,7 +129,7 @@ const PHONE_EXPRESSIONS = [
   { en: "I'll call you back later.", jp: '後でかけ直します。' },
   { en: 'You have the wrong number.', jp: '番号をお間違えです。' },
   { en: 'Could you speak more slowly?', jp: 'もう少しゆっくり話していただけますか？' },
-  { en: "I'm sorry, but she is not available now.", jp: '申し訳ございませんが、彼女は今対応できません。' },
+  { en: "I'm sorry, but she is out now.", jp: '申し訳ございませんが、彼女は今外出しています。' },
   { en: 'Please tell him to call me back.', jp: '彼に折り返し電話するよう伝えてください。' },
 ]
 

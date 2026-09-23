@@ -308,7 +308,7 @@ const SVC: Sentence[] = [
   { jp: 'この花は甘い香りがします。', en: 'This flower smells sweet.' },
   { jp: 'その部屋はとても暖かくなりました。', en: 'The room became very warm.' },
   { jp: 'あなたの考えは面白そうに聞こえます。', en: 'Your idea sounds interesting.' },
-  { jp: '空が急に暗くなりました。', en: 'The sky turned dark suddenly.' },
+  { jp: '外は暗くなりました。', en: 'It got dark outside.' },
   { jp: '私の姉は去年看護師になりました。', en: 'My sister became a nurse last year.' },
   { jp: 'その音楽は美しく聞こえます。', en: 'That music sounds beautiful.' },
 ]
@@ -348,8 +348,8 @@ const RESTAURANT: Sentence[] = [
   { jp: '2人用のテーブルをお願いします。', en: 'We would like a table for two.' },
   { jp: '何かお飲み物はいかがですか。', en: 'Would you like something to drink?' },
   { jp: 'ここの料理はとてもおいしいです。', en: 'The food here is delicious.' },
-  { jp: 'ベジタリアン向けの料理はありますか。', en: 'Do you have a vegetarian dish?' },
-  { jp: '私は卵アレルギーがあります。', en: 'I am allergic to eggs.' },
+  { jp: 'ケーキはありますか。', en: 'Do you have any cake?' },
+  { jp: '私は卵が食べられません。', en: "I can't eat eggs." },
 ]
 
 export const eiken4ExtraQuestions: Question[] = [

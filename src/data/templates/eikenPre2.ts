@@ -28,30 +28,36 @@ const PRESENT_PERFECT_ACTIVITIES = [
   { en: 'washed the dishes', jp: 'お皿を洗ったところです' },
 ]
 
-const PASSIVE_VERBS = [
-  { en: 'cleaned', jp: 'そうじされています' },
-  { en: 'painted', jp: '塗装されています' },
-  { en: 'checked', jp: 'チェックされています' },
-  { en: 'maintained', jp: '整備されています' },
-  { en: 'decorated', jp: '飾られています' },
-  { en: 'repaired', jp: '修理されています' },
-  { en: 'washed', jp: '洗われています' },
-  { en: 'organized', jp: '整理されています' },
-  { en: 'inspected', jp: '点検されています' },
-  { en: 'swept', jp: '掃かれています' },
+/**
+ * One passive sentence per place in PLACE_TYPES, by index. Cycling verbs
+ * against places produced "This movie theater is swept every day".
+ */
+const PLACE_PASSIVES = [
+  { en: 'This restaurant is cleaned every day.', jp: 'このレストランは毎日そうじされています。' },
+  { en: 'This cafe is visited by many people every day.', jp: 'このカフェは毎日多くの人に訪れられています。' },
+  { en: 'This hotel is cleaned every day.', jp: 'このホテルは毎日そうじされています。' },
+  { en: 'This supermarket is used by many people every day.', jp: 'このスーパーは毎日多くの人に利用されています。' },
+  { en: 'This bookstore is visited by many students every day.', jp: 'この本屋は毎日多くの生徒に訪れられています。' },
+  { en: 'This park is cleaned every morning.', jp: 'この公園は毎朝そうじされています。' },
+  { en: 'This hospital is visited by many people every day.', jp: 'この病院は毎日多くの人に訪れられています。' },
+  { en: 'This school is cleaned by the students every day.', jp: 'この学校は毎日生徒たちによってそうじされています。' },
+  { en: 'This gym is used by many people every day.', jp: 'このジムは毎日多くの人に利用されています。' },
+  { en: 'This movie theater is cleaned every night.', jp: 'この映画館は毎晩そうじされています。' },
 ]
 
-const CRAFT_JOBS = [
-  { en: 'artist', jp: '芸術家' },
-  { en: 'designer', jp: 'デザイナー' },
-  { en: 'engineer', jp: 'エンジニア' },
-  { en: 'scientist', jp: '科学者' },
-  { en: 'inventor', jp: '発明家' },
-  { en: 'craftsman', jp: '職人' },
-  { en: 'architect', jp: '建築家' },
-  { en: 'sculptor', jp: '彫刻家' },
-  { en: 'carpenter', jp: '大工' },
-  { en: 'painter', jp: '画家' },
+/** Who made each of MADE_OBJECTS, by index — chosen to fit the object
+ * rather than cycled ("a necklace made by a famous inventor"). */
+const MAKERS = [
+  { en: 'company', jp: '会社' }, // toy
+  { en: 'designer', jp: 'デザイナー' }, // chair
+  { en: 'artist', jp: '芸術家' }, // table
+  { en: 'company', jp: '会社' }, // box
+  { en: 'cook', jp: '料理人' }, // cake
+  { en: 'designer', jp: 'デザイナー' }, // bag
+  { en: 'painter', jp: '画家' }, // picture
+  { en: 'artist', jp: '芸術家' }, // basket
+  { en: 'artist', jp: '芸術家' }, // vase
+  { en: 'company', jp: '会社' }, // blanket
 ]
 
 const ROLES = [
@@ -62,9 +68,9 @@ const ROLES = [
   { en: 'neighbor', jp: '隣人' },
   { en: 'classmate', jp: 'クラスメート' },
   { en: 'teacher', jp: '先生' },
-  { en: 'colleague', jp: '同僚' },
-  { en: 'teammate', jp: 'チームメート' },
-  { en: 'volunteer', jp: 'ボランティア' },
+  { en: 'boy', jp: '男の子' },
+  { en: 'girl', jp: '女の子' },
+  { en: 'woman', jp: '女性' },
 ]
 
 const GERUND_VERBS = [
@@ -85,9 +91,9 @@ const MADE_OBJECTS = [
   { en: 'chair', jp: '椅子' },
   { en: 'table', jp: 'テーブル' },
   { en: 'box', jp: '箱' },
-  { en: 'necklace', jp: 'ネックレス' },
-  { en: 'bracelet', jp: 'ブレスレット' },
-  { en: 'sculpture', jp: '彫刻' },
+  { en: 'cake', jp: 'ケーキ' },
+  { en: 'bag', jp: 'かばん' },
+  { en: 'picture', jp: '絵' },
   { en: 'basket', jp: 'かご' },
   { en: 'vase', jp: '花瓶' },
   { en: 'blanket', jp: '毛布' },
@@ -257,7 +263,7 @@ const TECH_USE = [
   { en: 'gaming', jp: 'ゲーム' },
   { en: 'internet use', jp: 'インターネットの使用' },
   { en: 'texting', jp: 'メールを送ること' },
-  { en: 'social media', jp: 'SNS' },
+  { en: 'snacking', jp: 'おやつを食べること' },
   { en: 'computer use', jp: 'コンピューターの使用' },
   { en: 'sitting', jp: '座っていること' },
 ]
@@ -271,7 +277,7 @@ const HEALTH_HABITS = [
   { en: 'stretch', jp: 'ストレッチをする' },
   { en: 'wash my hands', jp: '手を洗う' },
   { en: 'eat breakfast', jp: '朝食を食べる' },
-  { en: 'avoid junk food', jp: 'ジャンクフードを避ける' },
+  { en: 'eat fruit', jp: '果物を食べる' },
   { en: 'take a break', jp: '休憩をとる' },
 ]
 
@@ -291,12 +297,9 @@ export const eikenPre2Questions: Question[] = [
   ...PRESENT_PERFECT_ACTIVITIES.map((p, i) =>
     q(`ep2-t3-${i}`, `私はちょうど${p.jp}。`, `I have just ${p.en}.`, '現在完了(完了)'),
   ),
-  ...PLACE_TYPES.map((p, i) => {
-    const v = PASSIVE_VERBS[i % PASSIVE_VERBS.length]
-    return q(`ep2-t4-${i}`, `この${p.jp}は毎日${v.jp}。`, `This ${p.en} is ${v.en} every day.`, '受動態')
-  }),
+  ...PLACE_PASSIVES.map((p, i) => q(`ep2-t4-${i}`, p.jp, p.en, '受動態')),
   ...MADE_OBJECTS.map((o, i) => {
-    const j = CRAFT_JOBS[i % CRAFT_JOBS.length]
+    const j = MAKERS[i % MAKERS.length]
     return q(
       `ep2-t5-${i}`,
       `その${o.jp}は有名な${j.jp}によって作られました。`,

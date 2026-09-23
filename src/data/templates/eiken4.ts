@@ -35,10 +35,10 @@ const VERBS_MOTION = [
   { en: 'jump', jp: '跳ぶ' },
   { en: 'climb', jp: '登る' },
   { en: 'skate', jp: 'スケートをする' },
-  { en: 'cycle', jp: '自転車に乗る' },
+  { en: 'read', jp: '読む' },
   { en: 'ski', jp: 'スキーをする' },
   { en: 'row', jp: 'ボートをこぐ' },
-  { en: 'skip', jp: 'スキップする' },
+  { en: 'write', jp: '書く' },
 ]
 
 const COMPARATIVE_ADJ = [

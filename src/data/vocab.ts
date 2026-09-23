@@ -54,7 +54,7 @@ export const ANIMALS: AnimalWord[] = [
   { singular: 'elephant', plural: 'elephants', jp: 'ゾウ' },
   { singular: 'panda', plural: 'pandas', jp: 'パンダ' },
   { singular: 'fox', plural: 'foxes', jp: 'キツネ' },
-  { singular: 'wolf', plural: 'wolves', jp: 'オオカミ' },
+  { singular: 'cow', plural: 'cows', jp: 'ウシ' },
   { singular: 'duck', plural: 'ducks', jp: 'アヒル' },
   { singular: 'pig', plural: 'pigs', jp: 'ブタ' },
   { singular: 'sheep', plural: 'sheep', jp: 'ヒツジ' },
@@ -86,8 +86,8 @@ export const FOODS: FoodWord[] = [
   { plural: 'cucumbers', jp: 'きゅうり' },
   { plural: 'pumpkins', jp: 'かぼちゃ' },
   { plural: 'mangoes', jp: 'マンゴー' },
-  { plural: 'pears', jp: '梨' },
-  { plural: 'plums', jp: 'すもも' },
+  { plural: 'cookies', jp: 'クッキー' },
+  { plural: 'sandwiches', jp: 'サンドイッチ' },
   { plural: 'kiwis', jp: 'キウイ' },
 ]
 
@@ -167,7 +167,7 @@ export const INSTRUMENTS: { en: string; jp: string }[] = [
   { en: 'flute', jp: 'フルート' },
   { en: 'drums', jp: 'ドラム' },
   { en: 'trumpet', jp: 'トランペット' },
-  { en: 'cello', jp: 'チェロ' },
+  { en: 'recorder', jp: 'リコーダー' },
   { en: 'clarinet', jp: 'クラリネット' },
   { en: 'harp', jp: 'ハープ' },
   { en: 'saxophone', jp: 'サックス' },
@@ -215,7 +215,7 @@ export const ADJ_STATE: { en: string; jp: string }[] = [
 export const PLACE_TYPES: { en: string; jp: string }[] = [
   { en: 'restaurant', jp: 'レストラン' },
   { en: 'cafe', jp: 'カフェ' },
-  { en: 'bakery', jp: 'パン屋' },
+  { en: 'hotel', jp: 'ホテル' },
   { en: 'supermarket', jp: 'スーパー' },
   { en: 'bookstore', jp: '本屋' },
   { en: 'park', jp: '公園' },
@@ -236,7 +236,7 @@ export const SPORTS_PLAY: { en: string; jp: string }[] = [
   { en: 'golf', jp: 'ゴルフ' },
   { en: 'handball', jp: 'ハンドボール' },
   { en: 'rugby', jp: 'ラグビー' },
-  { en: 'cricket', jp: 'クリケット' },
+  { en: 'dodgeball', jp: 'ドッジボール' },
   { en: 'table tennis', jp: '卓球' },
 ]
 
