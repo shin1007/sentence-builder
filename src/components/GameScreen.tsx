@@ -110,7 +110,12 @@ export default function GameScreen({
   /** Questions actually resolved so far — an endless run is scored over this. */
   const [answeredCount, setAnsweredCount] = useState(0)
 
-  const [status, setStatus] = useState<'playing' | 'correct' | 'wrong'>('playing')
+  /**
+   * 'fixed' is a sentence finished after a wrong tile in retry-on-miss mode:
+   * the board ends up right, but the player didn't get there unaided, so it
+   * scores and counts as a miss rather than a correct answer.
+   */
+  const [status, setStatus] = useState<'playing' | 'correct' | 'wrong' | 'fixed'>('playing')
   /**
    * This question's budget, scaled to how many words it takes (see
    * data/timeLimit.ts). Held in state rather than derived so a question that
@@ -146,6 +151,11 @@ export default function GameScreen({
   /** True while a wrong-tile hint is being read aloud, so a quick string of
    * wrong taps doesn't restart the sentence from the top each time. */
   const hintSpeaking = useRef(false)
+  /** A wrong tile was tapped on the question on screen now (retry-on-miss
+   * mode). Kept per appearance rather than read off questionOutcome, which in
+   * endless can carry a miss over from an earlier appearance of the same
+   * question. */
+  const missedThisQuestion = useRef(false)
   /**
    * Every question id this run has queued up, so an endless refill can skip
    * what the player has already seen. Refills used to be deduped only against
@@ -196,6 +206,7 @@ export default function GameScreen({
   useEffect(() => {
     if (qIndex === 0) return
     cancelPendingCheck()
+    missedThisQuestion.current = false
     const q = questions[qIndex]
     setTray(buildTiles(q))
     setSlots(new Array(q.words.length).fill(null))
@@ -311,7 +322,11 @@ export default function GameScreen({
 
   const resolve = useCallback(
     (isCorrect: boolean) => {
-      setStatus(isCorrect ? 'correct' : 'wrong')
+      // Finishing the sentence after a wrong tile doesn't make it a correct
+      // answer. The miss was already booked (life, review queue, grammar
+      // stats) when the tile was tapped, so this only withholds the reward.
+      const fixed = isCorrect && missedThisQuestion.current
+      setStatus(fixed ? 'fixed' : isCorrect ? 'correct' : 'wrong')
 
       let nextScore = score
       let nextCombo = combo
@@ -321,7 +336,12 @@ export default function GameScreen({
       const nextAnswered = answeredCount + 1
       setAnsweredCount(nextAnswered)
 
-      if (isCorrect) {
+      if (fixed) {
+        // Combo was already reset by the wrong tap. The question stays
+        // 'missed' in questionOutcome, so it's tallied as never recovered
+        // at the end of the run unless it comes back and is solved cleanly.
+        sound.place()
+      } else if (isCorrect) {
         const tier = combo >= 5 ? 2 : combo >= 3 ? 1 : 0
         const multiplier = tier === 2 ? 2 : tier === 1 ? 1.5 : 1
         const bonus = practiceMode ? 0 : timeBonus(timeLeft, timeLimit)
@@ -393,7 +413,7 @@ export default function GameScreen({
       // question still reinforces how the correct sentence actually sounds.
       const speechDone = sound.sfxOn ? speakEnglish(question.words.join(' ')) : Promise.resolve()
       const minDelay = new Promise<void>((res) => {
-        advanceTimer.current = window.setTimeout(res, isCorrect ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG)
+        advanceTimer.current = window.setTimeout(res, isCorrect && !fixed ? FEEDBACK_DELAY_CORRECT : FEEDBACK_DELAY_WRONG)
       })
       Promise.all([minDelay, speechDone]).then(() => advance())
     },
@@ -469,6 +489,7 @@ export default function GameScreen({
       if (tile.word !== expectedWord) {
         // 間違えた単語をタップした瞬間に赤枠＆シェイクで通知！
         setErrorTileUid(tile.uid)
+        missedThisQuestion.current = true
         sound.wrong()
         setCombo(0)
         recordMiss(levelId, question.id)
@@ -640,7 +661,12 @@ export default function GameScreen({
               {question.note && <span className={styles.note}>{question.note}</span>}
             </>
           )}
-          {status === 'correct' && question.note && <span className={styles.note}>{question.note}</span>}
+          {status === 'fixed' && (
+            <p className={`${styles.note} ${styles.noteWrong}`}>完成！でも まちがえたので正解には数えないよ</p>
+          )}
+          {(status === 'correct' || status === 'fixed') && question.note && (
+            <span className={styles.note}>{question.note}</span>
+          )}
         </div>
 
         <div className={styles.slotsArea}>
