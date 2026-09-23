@@ -288,6 +288,11 @@
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
+.jpHidden {
+  opacity: 0.85;
+  font-style: italic;
+}
+
 .speakButton {
   flex: 0 0 auto;
   height: 5.4cqh;
@@ -334,6 +339,13 @@
   border: 1px solid rgba(255, 255, 255, 0.5);
   color: #ffffff;
   font-weight: 700;
+}
+
+.noteHint {
+  background: rgba(250, 204, 21, 0.9);
+  border: 1px solid #ffffff;
+  color: #1a1400;
+  font-weight: 800;
 }
 
 .noteWrong {

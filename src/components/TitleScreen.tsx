@@ -17,7 +17,7 @@ export default function TitleScreen({
   onProgress: () => void
 }) {
   const sound = useSoundContext()
-  const { retryOnMiss, practiceMode } = useSettingsContext()
+  const { retryOnMiss, practiceMode, listeningMode } = useSettingsContext()
   const [showSettings, setShowSettings] = useState(false)
   // Spaced repetition only works if due questions actually get answered on
   // time, so the title says when some are waiting rather than leaving them to
@@ -104,6 +104,7 @@ export default function TitleScreen({
         >
           {retryOnMiss ? '🔄 やり直しモード' : '⏩ 一発勝負モード'}
           {practiceMode && '・練習'}
+          {listeningMode && '・🎧'}
         </button>
         <button
           className={`${styles.badge} ${styles.badgeButton}`}

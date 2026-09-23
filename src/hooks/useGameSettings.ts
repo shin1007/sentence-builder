@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 const CAPITALIZE_KEY = 'wordrush.capitalizeFirst'
 const PRACTICE_MODE_KEY = 'wordrush.practiceMode'
 const RETRY_ON_MISS_KEY = 'wordrush.retryOnMiss'
+const LISTENING_MODE_KEY = 'wordrush.listeningMode'
 
 function readBool(key: string, fallback: boolean) {
   try {
@@ -21,6 +22,9 @@ export function useGameSettings() {
   // Retry mode (default): returns placed tiles to the tray on wrong word order
   // so the player can retry the question until correct.
   const [retryOnMiss, setRetryOnMiss] = useState(() => readBool(RETRY_ON_MISS_KEY, true))
+  // Listening mode hides the Japanese prompt and reads the English sentence
+  // instead, so the player builds it from what they heard.
+  const [listeningMode, setListeningMode] = useState(() => readBool(LISTENING_MODE_KEY, false))
 
   useEffect(() => {
     try {
@@ -46,6 +50,14 @@ export function useGameSettings() {
     }
   }, [retryOnMiss])
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(LISTENING_MODE_KEY, listeningMode ? '1' : '0')
+    } catch {
+      /* storage unavailable — preference just won't persist */
+    }
+  }, [listeningMode])
+
   return {
     capitalizeFirst,
     toggleCapitalizeFirst: () => setCapitalizeFirst((v) => !v),
@@ -53,5 +65,7 @@ export function useGameSettings() {
     togglePracticeMode: () => setPracticeMode((v) => !v),
     retryOnMiss,
     toggleRetryOnMiss: () => setRetryOnMiss((v) => !v),
+    listeningMode,
+    toggleListeningMode: () => setListeningMode((v) => !v),
   }
 }

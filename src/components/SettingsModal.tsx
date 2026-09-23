@@ -11,6 +11,8 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
     togglePracticeMode,
     retryOnMiss,
     toggleRetryOnMiss,
+    listeningMode,
+    toggleListeningMode,
   } = useSettingsContext()
 
   const handleSelectRetry = (enableRetry: boolean) => {
@@ -24,6 +26,13 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
     sound.click()
     if (practiceMode !== enablePractice) {
       togglePracticeMode()
+    }
+  }
+
+  const handleSelectListening = (enableListening: boolean) => {
+    sound.click()
+    if (listeningMode !== enableListening) {
+      toggleListeningMode()
     }
   }
 
@@ -117,6 +126,41 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <p className={styles.optionDesc}>
                   タイマーもライフ制限もなしで、自分のペースでじっくり学べます。
+                </p>
+              </button>
+            </div>
+          </div>
+
+          {/* 出題のしかた */}
+          <div className={styles.section}>
+            <div className={styles.sectionLabel}>
+              <span>👂</span> 出題のしかた
+            </div>
+            <div className={styles.optionGrid}>
+              <button
+                type="button"
+                className={`${styles.optionCard} ${!listeningMode ? styles.active : ''}`}
+                onClick={() => handleSelectListening(false)}
+              >
+                <div className={styles.optionHeader}>
+                  <span className={styles.optionTitle}>📖 日本語を見て</span>
+                  <span className={styles.optionBadge}>基本</span>
+                </div>
+                <p className={styles.optionDesc}>
+                  日本語の文を見て、その意味になるように英語を並べます。
+                </p>
+              </button>
+
+              <button
+                type="button"
+                className={`${styles.optionCard} ${listeningMode ? styles.active : ''}`}
+                onClick={() => handleSelectListening(true)}
+              >
+                <div className={styles.optionHeader}>
+                  <span className={styles.optionTitle}>🎧 英語を聞いて</span>
+                </div>
+                <p className={styles.optionDesc}>
+                  日本語は隠して英語だけを読み上げます。聞こえた順に並べよう。日本語は答えたあとに出ます（音声OFFのときは日本語で出題）。
                 </p>
               </button>
             </div>
