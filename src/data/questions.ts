@@ -10,6 +10,7 @@ import { eiken2Questions } from './templates/eiken2'
 import { eiken2ExtraQuestions } from './templates/eiken2Extra'
 import { koukoNyushiQuestions } from './templates/koukoNyushi'
 import { koukoNyushiRealQuestions } from './templates/koukoNyushiReal'
+import { idiomQuestions } from './templates/idioms'
 
 /**
  * Longest answer the game will serve, in words.
@@ -41,11 +42,11 @@ const buildBank = (questions: Question[]): Question[] =>
  * far more lexical variety than hand-typing every sentence would allow.
  */
 export const QUESTIONS: Record<LevelId, Question[]> = {
-  eiken4: buildBank([...eiken4Questions, ...eiken4ExtraQuestions]),
-  eiken3: buildBank([...eiken3Questions, ...eiken3ExtraQuestions]),
-  eikenPre2: buildBank([...eikenPre2Questions, ...eikenPre2ExtraQuestions]),
-  eiken2: buildBank([...eiken2Questions, ...eiken2ExtraQuestions]),
-  koukoNyushi: buildBank([...koukoNyushiQuestions, ...koukoNyushiRealQuestions]),
+  eiken4: buildBank([...eiken4Questions, ...eiken4ExtraQuestions, ...idiomQuestions.eiken4]),
+  eiken3: buildBank([...eiken3Questions, ...eiken3ExtraQuestions, ...idiomQuestions.eiken3]),
+  eikenPre2: buildBank([...eikenPre2Questions, ...eikenPre2ExtraQuestions, ...idiomQuestions.eikenPre2]),
+  eiken2: buildBank([...eiken2Questions, ...eiken2ExtraQuestions, ...idiomQuestions.eiken2]),
+  koukoNyushi: buildBank([...koukoNyushiQuestions, ...koukoNyushiRealQuestions, ...idiomQuestions.koukoNyushi]),
 }
 
 /**

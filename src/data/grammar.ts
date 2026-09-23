@@ -33,6 +33,7 @@ export type GrammarCategory =
   | 'subjunctive'
   | 'modifier'
   | 'expression'
+  | 'idiom'
   | 'advanced'
 
 export const CATEGORY_LABELS: Record<GrammarCategory, string> = {
@@ -52,6 +53,7 @@ export const CATEGORY_LABELS: Record<GrammarCategory, string> = {
   subjunctive: '仮定法',
   modifier: '修飾・数量表現',
   expression: '場面表現',
+  idiom: '熟語・群動詞',
   advanced: '発展構文',
 }
 
@@ -248,6 +250,12 @@ export const GRAMMAR_ITEMS = [
   { id: 'letterExpression', label: '手紙・メール表現', category: 'expression', stage: 3 },
   { id: 'phoneExpression', label: '電話表現', category: 'expression', stage: 3 },
   { id: 'directionExpression', label: '道案内表現', category: 'expression', stage: 3 },
+
+  // --- idioms (see templates/idioms.ts) -----------------------------------
+  { id: 'phrasalVerb', label: '群動詞', category: 'idiom', stage: 2 },
+  { id: 'verbIdiom', label: '動詞中心の熟語', category: 'idiom', stage: 2 },
+  { id: 'beAdjectivePreposition', label: 'be + 形容詞 + 前置詞', category: 'idiom', stage: 2 },
+  { id: 'groupPreposition', label: '群前置詞', category: 'idiom', stage: 2 },
 
   // --- advanced constructions ---------------------------------------------
   { id: 'cleftSentence', label: '強調構文 It is 〜 that', category: 'advanced', stage: 5 },

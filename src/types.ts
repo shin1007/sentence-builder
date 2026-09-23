@@ -41,6 +41,24 @@ export interface Question {
   grammar?: GrammarId
   /** Present only for questions adapted from a real past exam. */
   source?: QuestionSource
+  /** Present only for idiom questions (data/templates/idioms.ts). */
+  idiom?: IdiomSpan
+}
+
+/**
+ * The idiom a question drills and where it sits in the answer. While the
+ * player is new to an idiom its words are served as a single tile (see
+ * utils/idiomProgress.ts), so the phrase is first met as one unit.
+ */
+export interface IdiomSpan {
+  /** Dictionary form, e.g. "take care of". Also the progress key. */
+  phrase: string
+  /** Short Japanese gloss, e.g. "〜の世話をする". */
+  meaning: string
+  /** Index into `words` of the idiom's first word. */
+  start: number
+  /** Index into `words` one past the idiom's last word. */
+  end: number
 }
 
 export interface LevelInfo {
